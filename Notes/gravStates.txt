@@ -1,0 +1,17 @@
+States:
+
+colliding, not jumping         - grav=false
+
+not colliding, not jumping     - grav=true	
+
+not colliding, jumping w/jH>0  - grav=false	
+
+not colliding, jumping w/jH=0  - grav=true
+
+CnJ
+
+nCnJ
+
+nCJ15
+
+nCJ0
