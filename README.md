@@ -21,7 +21,7 @@ Moving platforms - **Not Finished**
 
 Spikes - **Not Finished** 
 
-Replace the text navigation instructions with buttons - **Not Finished** 
+Replace the text navigation instructions with buttons - **Not Finished (In Progress)** 
 
 Timer for speedruns - **Not Finished** 
 
