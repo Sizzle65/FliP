@@ -19,7 +19,7 @@ More levels - **Not Finished**
 
 Moving platforms - **Not Finished** 
 
-Spikes - **Not Finished** 
+Spikes - **Not Finished (In Progress)** 
 
 Replace the text navigation instructions with buttons - **Finished** 
 
@@ -32,5 +32,9 @@ Different gamemodes - **Not Finished**
 Tutorial - **Not Finished** 
 
 Story - **Not Finished** 
+
+Continue mode - **Not Finished**
+
+Options menu - **Not Finished**
 
 Other interesting game elements I have yet to think of - **Not Finished** 
