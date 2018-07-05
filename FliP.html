@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>PixiJS-4</title>
+</head>
+<body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.6.0/pixi.min.js"></script>
+
+<script>
+const app = new PIXI.Application(800,500);
+document.body.appendChild(app.view); 
+
+let newGameButton = {name:"New Game",x:282,y:260};
+let continueGameButton = {name:"Continue",x:282,y:310};
+let optionsButton = {name:"Options",x:282,y:360};
+let controlsButton = {name:"Controls",x:282,y:410};
+let menuItems = [newGameButton,continueGameButton,optionsButton,controlsButton];
+let index = 0;
+let indexDeath = 0;
+let maxVel = 20;
+let interval = 30;
+let timer = interval;
+let lateralSpeed = 5;
+let cooldown = false;
+let ground  = true;
+let jumping = false;
+let originalJumpHeight = 20;
+let fallSpeed = 1;
+let jumpHeight = originalJumpHeight;
+let jumpInterval;
+let x = 0;
+let y = 0;
+let keys = [];
+let state = "CnJ";
+let pX, pY, player, base, plat1, plat2, plat3, plat4, plat5, plat6,plat7,plat8,plat9,plat10,plat11,plat12, door,text,slogan,instructions,start,background,healthBox1,healthBox2,healthBox3,back,move,levelTag,startCont,options,pointers;
+let stageColor = "white";
+let lives = 3;
+let stage = "menu";
+let audioMain = new Audio("mainMusic.mp3");
+audioMain.volume = 0.2;
+let jumpAudio = new Audio("jump.mp3");
+jumpAudio.volume = 0.2;
+let winAudio = new Audio("win.mp3");
+winAudio.volume = 0.2;
+let deathAudio = new Audio("death2.mp3");
+deathAudio.volume = 0.2;
+let winScreenAudio = new Audio("winScreen.mp3");
+winScreenAudio.volume = 0.2;
+let lossAudio = new Audio("loss.mp3");
+lossAudio.volume = 0.2;
+let swooshAudio = new Audio("swoosh.mp3");
+swooshAudio.volume = 0.2;
+
+//called whenever the webpage loads, checks the local storage to see if the game had been started before, 
+//if it has it sets the stage and health to the proper value then calls setup, also starts background music
+/*
+function load(){
+	if(localStorage.getItem("stage") != null && localStorage.getItem("health") != null){
+		stage = localStorage.getItem("stage");
+		lives = localStorage.getItem("health");
+	}
+	audioMain.loop = true;
+	audioMain.play();
+	setup();
+}*/
+
+//sets up the stage depending on the value of stage, creates all necessary PIXI elements 
+function setup(){
+	//localStorage.setItem("stage",stage);
+	if(stage == "menu"){
+		text = new PIXI.Text('FLiP ',{fontFamily : 'Century Gothic', fontSize: 175, fill : 0xFFFFFF, align : 'center', letterSpacing : 40});
+		text.x = 180;
+		//text.y = 0;
+
+		slogan = new PIXI.Text('A puzzle platformer, with a twist! ',{fontFamily : 'Century Gothic', fontSize: 30, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		slogan.x = 140;
+		slogan.y = 200;
+
+		start = new PIXI.Text('New Game',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		start.x = 315;
+		start.y = 280;
+
+		startCont = new PIXI.Text('Continue',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xA9A9A9, align : 'center', letterSpacing : 1});
+		startCont.x = 325;
+		startCont.y = 330;
+		
+		options = new PIXI.Text('Options',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xA9A9A9, align : 'center', letterSpacing : 1});
+		options.x = 332;
+		options.y = 380;
+		
+		instructions = new PIXI.Text('Controls',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		instructions.x = 328;
+		instructions.y = 430;
+		
+		pointers = new PIXI.Sprite.fromImage('MenuPointers2.PNG');
+		pointers.x = menuItems[index].x;
+		pointers.y = menuItems[index].y;
+
+		app.stage.addChild(text);
+		app.stage.addChild(slogan);
+		app.stage.addChild(start);
+		app.stage.addChild(startCont);
+		app.stage.addChild(options);
+		app.stage.addChild(instructions);
+		app.stage.addChild(pointers);
+		
+	}
+	else if(stage == "level1"){
+		lives = 3;
+		background = makeRectangle(800,500,0x000000);
+		background.x = 400;
+		background.y = 250;
+
+		player = makeRectangle(30,30,0xFFFFFF);
+		player.x = 100;
+		player.y = 470;
+
+		base = makeRectangle(400,15,0xFFFFFF);
+		base.x = 0;
+		base.y = 490;
+
+		plat1 = makeRectangle(400,15,0xFFFFFF);
+		plat1.x = 500;
+		plat1.y = app.stage.height + 400;
+
+		door = makeRectangle(40,60,0xFFFFFF);
+		door.x = 775;
+		door.y = app.stage.height + 100;
+
+		plat2 = makeRectangle(400,15,0x000000);
+		plat2.x = 0;
+		plat2.y = app.stage.height + 300;
+
+		plat3 = makeRectangle(200,15,0x000000);
+		plat3.x = 400;
+		plat3.y = app.stage.height + 150;
+
+		plat4 = makeRectangle(200,15,0xFFFFFF);
+		plat4.x = 700;
+		plat4.y = app.stage.height + 150;
+
+		text = new PIXI.Text('Lives: ',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		text.x = 2;
+		text.y = 0;
+		
+		instructions = new PIXI.Text('Level 1 Cleared!',{fontFamily : 'Century Gothic', fontSize: 50, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		instructions.x = 180;
+		instructions.y = 225;
+		
+		levelTag = new PIXI.Text('Level: 1',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		levelTag.x = 710;
+		levelTag.y = 0;
+	
+		healthBox1 = makeRectangle(20,20,0xFFFFFF);
+		healthBox1.x = 80;
+		healthBox1.y = 14;
+	
+		healthBox2 = makeRectangle(20,20,0xFFFFFF);
+		healthBox2.x = 105;
+		healthBox2.y = 14;
+	
+		healthBox3 = makeRectangle(20,20,0xFFFFFF);
+		healthBox3.x = 130;
+		healthBox3.y = 14;
+	
+		app.stage.addChild(healthBox1);
+		app.stage.addChild(healthBox2);
+		app.stage.addChild(healthBox3);
+		app.stage.addChild(text);
+		app.stage.addChild(levelTag);
+		app.stage.addChild(base);
+		app.stage.addChild(plat1);
+		app.stage.addChild(door);
+		app.stage.addChildAt(plat2,0);
+		app.stage.addChildAt(plat3,0);
+		app.stage.addChild(plat4);
+		app.stage.addChildAt(player,7);
+		app.stage.addChildAt(background,0);
+	}
+	else if(stage == "level2"){
+		text = new PIXI.Text('Lives: ',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		text.x = 2;
+		text.y = 0;
+		
+		levelTag = new PIXI.Text('Level: 2',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		levelTag.x = 710;
+		levelTag.y = 0;
+		
+		if(lives == 3){
+			healthBox1 = makeRectangle(20,20,0xFFFFFF);
+			healthBox1.x = 80;
+			healthBox1.y = 14;
+	
+			healthBox2 = makeRectangle(20,20,0xFFFFFF);
+			healthBox2.x = 105;
+			healthBox2.y = 14;
+	
+			healthBox3 = makeRectangle(20,20,0xFFFFFF);
+			healthBox3.x = 130;
+			healthBox3.y = 14;
+			
+			app.stage.addChild(healthBox1);
+			app.stage.addChild(healthBox2);
+			app.stage.addChild(healthBox3);
+
+		}
+		else if(lives == 2){
+			healthBox1 = makeRectangle(20,20,0xFFFFFF);
+			healthBox1.x = 80;
+			healthBox1.y = 14;
+	
+			healthBox2 = makeRectangle(20,20,0xFFFFFF);
+			healthBox2.x = 105;
+			healthBox2.y = 14;
+	
+			app.stage.addChild(healthBox1);
+			app.stage.addChild(healthBox2);
+		}
+		if(lives == 1){
+			healthBox1 = makeRectangle(20,20,0xFFFFFF);
+			healthBox1.x = 80;
+			healthBox1.y = 14;
+	
+			app.stage.addChild(healthBox1);
+		}
+		
+		background = makeRectangle(800,500,0x000000);
+		background.x = 400;
+		background.y = 250;
+
+		player = makeRectangle(30,30,0xFFFFFF);
+		player.x = 25;
+		player.y = 430;
+		
+		base = makeRectangle(100,15,0xFFFFFF);
+		base.x = 50;
+		base.y = 490;
+		
+		plat1 = makeRectangle(50,15,0xFFFFFF);
+		plat1.x = 250;
+		plat1.y = 490;
+		
+		plat2 = makeRectangle(50,15,0x000000);
+		plat2.x = 420;
+		plat2.y = 460;
+		
+		plat3 = makeRectangle(50,15,0xFFFFFF);
+		plat3.x = 600;
+		plat3.y = 430;
+		
+		plat4 = makeRectangle(50,15,0x000000);
+		plat4.x = 780;
+		plat4.y = 400;
+		
+		plat5 = makeRectangle(50,15,0xFFFFFF);
+		plat5.x = 780;
+		plat5.y = 200;
+		
+		plat6 = makeRectangle(50,15,0x000000);
+		plat6.x = 600;
+		plat6.y = 170;
+		
+		plat7 = makeRectangle(50,15,0xFFFFFF);
+		plat7.x = 420;
+		plat7.y = 140;
+		
+		plat8 = makeRectangle(50,15,0x000000);
+		plat8.x = 250;
+		plat8.y = 120;
+		
+		plat9 = makeRectangle(100,15,0xFFFFFF);
+		plat9.x = 75;
+		plat9.y = 100;
+		
+		door = makeRectangle(40,60,0xFFFFFF);
+		door.x = 50;
+		door.y = 60;
+		
+		instructions = new PIXI.Text('Level 2 Cleared!',{fontFamily : 'Century Gothic', fontSize: 50, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		instructions.x = 180;
+		instructions.y = 225;
+		
+		app.stage.addChild(plat1);
+		app.stage.addChild(plat2);
+		app.stage.addChild(plat3);
+		app.stage.addChild(plat4);
+		app.stage.addChild(plat5);
+		app.stage.addChild(plat6);
+		app.stage.addChild(plat7);
+		app.stage.addChild(plat8);
+		app.stage.addChild(plat9);
+		app.stage.addChild(door);
+		app.stage.addChild(base);
+		app.stage.addChild(text);
+		app.stage.addChild(levelTag);
+		app.stage.addChild(player);
+		app.stage.addChildAt(background,0);
+	}
+	else if(stage == "level3"){
+		text = new PIXI.Text('Lives: ',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		text.x = 2;
+		text.y = 0;
+		
+		instructions = new PIXI.Text('Level 3 Cleared!',{fontFamily : 'Century Gothic', fontSize: 50, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		instructions.x = 180;
+		instructions.y = 350;
+		
+		levelTag = new PIXI.Text('Level: 3',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		levelTag.x = 710;
+		levelTag.y = 0;
+		
+		if(lives == 3){
+			healthBox1 = makeRectangle(20,20,0xFFFFFF);
+			healthBox1.x = 80;
+			healthBox1.y = 14;
+	
+			healthBox2 = makeRectangle(20,20,0xFFFFFF);
+			healthBox2.x = 105;
+			healthBox2.y = 14;
+	
+			healthBox3 = makeRectangle(20,20,0xFFFFFF);
+			healthBox3.x = 130;
+			healthBox3.y = 14;
+			
+			app.stage.addChild(healthBox1);
+			app.stage.addChild(healthBox2);
+			app.stage.addChild(healthBox3);
+
+		}
+		else if(lives == 2){
+			healthBox1 = makeRectangle(20,20,0xFFFFFF);
+			healthBox1.x = 80;
+			healthBox1.y = 14;
+	
+			healthBox2 = makeRectangle(20,20,0xFFFFFF);
+			healthBox2.x = 105;
+			healthBox2.y = 14;
+	
+			app.stage.addChild(healthBox1);
+			app.stage.addChild(healthBox2);
+		}
+		if(lives == 1){
+			healthBox1 = makeRectangle(20,20,0xFFFFFF);
+			healthBox1.x = 80;
+			healthBox1.y = 14;
+	
+			app.stage.addChild(healthBox1);
+		}
+		
+		background = makeRectangle(800,500,0x000000);
+		background.x = 400;
+		background.y = 250;
+
+		player = makeRectangle(30,30,0xFFFFFF);
+		player.x = 25;
+		player.y = 80;
+
+		base = makeRectangle(200,15,0xFFFFFF);
+		base.x = 50;
+		base.y = 100;
+		
+		plat1 = makeRectangle(15,120,0xFFFFFF);
+		plat1.x = 157;
+		plat1.y = 47.5;
+		
+		plat2 = makeRectangle(50,15,0x000000);
+		plat2.x = 100;
+		plat2.y = 300;
+		
+		
+		plat3 = makeRectangle(15,300,0xFFFFFF);
+		plat3.x = 220;
+		plat3.y = 50;
+		
+		plat4 = makeRectangle(55,15,0xFFFFFF);
+		plat4.x = 252;
+		plat4.y = 192.5;
+		
+		plat5 = makeRectangle(15,300,0xFFFFFF);
+		plat5.x = 285;
+		plat5.y = 50;
+		
+		
+		plat6 = makeRectangle(50,15,0x000000);
+		plat6.x = 300;
+		plat6.y = 350;
+		
+		
+		plat7 = makeRectangle(15,400,0xFFFFFF);
+		plat7.x = 399.5;
+		plat7.y = 92.5;
+		
+		plat8 = makeRectangle(55,15,0xFFFFFF);
+		plat8.x = 434;
+		plat8.y = 285;
+		
+		plat9 = makeRectangle(15,400,0xFFFFFF);
+		plat9.x = 468.5;
+		plat9.y = 92.5;
+		
+		
+		plat10 = makeRectangle(50,15,0x000000);
+		plat10.x = 500;
+		plat10.y = 425;
+		
+		
+		plat11 = makeRectangle(15,500,0xFFFFFF);
+		plat11.x = 682.5;
+		plat11.y = 233;
+		
+		plat12 = makeRectangle(150,15,0xFFFFFF);
+		plat12.x = 750;
+		plat12.y = 490;
+		
+		door = makeRectangle(40,60,0xFFFFFF);
+		door.x = 778;
+		door.y = 450;
+				
+		app.stage.addChild(text);
+		app.stage.addChild(levelTag);
+		app.stage.addChild(player);
+		app.stage.addChild(base);
+		app.stage.addChild(plat1);
+		app.stage.addChild(plat2);
+		app.stage.addChild(plat3);
+		app.stage.addChild(plat4);
+		app.stage.addChild(plat5);
+		app.stage.addChild(plat6);
+		app.stage.addChild(plat7);
+		app.stage.addChild(plat8);
+		app.stage.addChild(plat9);
+		app.stage.addChild(plat10);
+		app.stage.addChild(plat11);
+		app.stage.addChild(plat12);
+		app.stage.addChild(door);
+		app.stage.addChildAt(background,0);
+	}
+	else if(stage == "death"){
+		text = new PIXI.Text('YOU DIED',{fontFamily : 'Century Gothic', fontSize: 100, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		text.x = 150;
+		text.y = 100;
+
+		start = new PIXI.Text('Play Again',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		start.x = 330;
+		start.y = 270;
+
+		back = new PIXI.Text('Main Menu',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		back.x = 328;
+		back.y = 330;
+		
+		pointers = new PIXI.Sprite.fromImage('MenuPointers2.PNG');
+		pointers.x = 293;
+		pointers.y = 250;
+
+		app.stage.addChild(text);
+		app.stage.addChild(start);
+		app.stage.addChild(back);
+		app.stage.addChild(pointers);
+		lossAudio.play();
+	}
+	else if(stage == "end"){
+		text = new PIXI.Text('YOU WIN!',{fontFamily : 'Century Gothic', fontSize: 80, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		text.x = 195;
+		text.y = 100;
+
+		start = new PIXI.Text('Play Again',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		start.x = 330;
+		start.y = 270;
+
+		back = new PIXI.Text('Main Menu',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		back.x = 328;
+		back.y = 330;
+		
+		pointers = new PIXI.Sprite.fromImage('MenuPointers2.PNG');
+		pointers.x = 293;
+		pointers.y = 250;
+
+		app.stage.addChild(text);
+		app.stage.addChild(start);
+		app.stage.addChild(back);
+		app.stage.addChild(pointers);
+		//winScreenAudio.play();
+	}
+	else if(stage == "inst"){
+		text = new PIXI.Text('Instructions',{fontFamily : 'Century Gothic', fontSize: 70, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		text.x = 185;
+		text.y = 0;
+
+		start = new PIXI.Text('Controls:\nHold A to strafe left\nHold D to strafe right\nPress W to jump\nPress Space to flip the colors\nPress ESC to open the menu\n\nGoal:\nNavigate the levels while inverting the colors \nto display different paths.\n Reach the door at the end of each\nlevel to progress.',{fontFamily : 'Century Gothic', fontSize: 25, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		start.x = 100;
+		start.y = 90;
+
+		back = new PIXI.Text('Main Menu',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		back.x = 330;
+		back.y = 460;
+		
+		pointers = new PIXI.Sprite.fromImage('MenuPointers2.PNG');
+		pointers.x = 295;
+		pointers.y = 440;
+
+		app.stage.addChild(text);
+		app.stage.addChild(start);
+		app.stage.addChild(back);
+		app.stage.addChild(pointers);
+	}
+	//if the stage is a level, sets the movement function to run at regular intervals, this allows for smooth movement
+	if(stage == "level1" || stage == "level2" || stage == "level3"){
+		move = setInterval(movement,20);
+	}
+}
+
+//Creates the rectangle used in the level design
+function makeRectangle(width=50,height=50,color=0xFF0000){
+	// http://pixijs.download/dev/docs/PIXI.Graphics.html
+	let rect = new PIXI.Graphics()
+	rect.beginFill(color);
+	//rect.lineStyle(4, 0xFFFF00, 1);
+	rect.drawRect(-width*.5, -height*.5, width, height);
+	rect.endFill();
+	return rect
+}
+
+//adds an event listener to the document, allows for proper changing of the stage, and flipping of the levels
+document.addEventListener('keydown',function(e){
+	if(stage == "menu"){
+		if(e.keyCode == 13){
+			//clear();
+			//setup();
+			if(index == 0){
+				clear();
+				setup();
+			}
+			else if(index == 3){
+				clear("inst");
+				setup();
+			}
+		}
+		//if(e.keyCode == 32){
+		//	clear("inst");
+		//	setup();
+		//}
+		if(e.keyCode == 83 || e.keyCode == 87){
+			if(e.keyCode == 83){
+				index++;
+				if(index > 3){
+					index = 0;
+				}
+			}
+			if(e.keyCode == 87){
+				index--;
+				if(index < 0){
+					index = 3;
+				}
+			}
+			
+			
+			app.stage.removeChild(pointers);
+			
+			pointers = new PIXI.Sprite.fromImage('MenuPointers2.png');
+			pointers.x = menuItems[index].x;
+			pointers.y = menuItems[index].y;
+			
+			app.stage.addChild(pointers);
+		}
+	}
+	else if(stage == "level1" || stage == "level2" || stage == "level3"){
+		if(e.keyCode == 32){
+			flip();
+		}
+	}
+	else if(stage == "death" || stage == "end"){
+		if(e.keyCode == 13){
+			if(indexDeath == 0){
+				clear("level1");
+				setup();
+			}
+			else{
+				indexDeath = 0;
+				clear("menu");
+				setup();
+			}
+		}
+		if(e.keyCode == 83 || e.keyCode == 87){
+			if(indexDeath == 0){
+				indexDeath = 1;
+				app.stage.removeChild(pointers);
+			
+				pointers = new PIXI.Sprite.fromImage('MenuPointers2.png');
+				pointers.x = 293;
+				pointers.y = 310;
+			
+				app.stage.addChild(pointers);
+			}
+				
+			else if(indexDeath == 1){
+				indexDeath = 0;
+				app.stage.removeChild(pointers);
+			
+				pointers = new PIXI.Sprite.fromImage('MenuPointers2.png');
+				pointers.x = 293;
+				pointers.y = 250;
+			
+				app.stage.addChild(pointers);
+			}
+
+			
+		}
+	}
+	/*else if(stage == "end"){
+		if(e.keyCode == 13){
+			clear("level1");
+			setup();
+		}
+		if(e.keyCode == 27){
+			clear("menu");
+			setup();
+		}
+	}*/
+	else if(stage == "inst"){
+		if(e.keyCode == 13){
+			index = 0;
+			clear("menu");
+			setup();
+		}
+	}
+	});
+
+//adds another event listener to the document to set a value of when a specific key, tied to movement, is down
+document.addEventListener('keydown',function(e) {	
+	
+	if(e.keyCode == 65){
+		keys[e.keyCode] = true;
+	}
+	if(e.keyCode == 68){
+		keys[e.keyCode] = true;
+	}
+	if(e.keyCode == 87){
+		keys[e.keyCode] = true;
+	}
+});
+
+//adds another event listener to the document to set a value of when a specific key, tied to movement, is released
+document.addEventListener('keyup',function(e) {	
+	
+	if(e.keyCode == 65){
+		keys[e.keyCode] = false;
+	}
+	if(e.keyCode == 68){
+		keys[e.keyCode] = false;
+	}
+	if(e.keyCode == 87){
+		keys[e.keyCode] = false;
+	}
+});
+
+//movement function handles all the movement that happens, and calls the physics, gravity and collision methods to help
+function movement(){
+	timer++;
+	if(stage == "level1"){
+		let col = boxesIntersect(player,base);
+		let col1 = boxesIntersect(player,plat1);
+		let col2 = boxesIntersect(player,plat2);
+		let col3 = boxesIntersect(player,plat3);
+		let col4 = boxesIntersect(player,plat4);
+		let win = boxesIntersect(player,door);
+
+		if(win && stageColor == "white"){
+			winAudio.play();
+			app.stage.removeChild(player);
+			app.stage.addChild(instructions);
+			clearInterval(move);
+			setTimeout(clear,3000);
+			setTimeout(setup,3010);
+		}
+	
+		if(stageColor == "white"){
+			if(col == false && col1 == false && col4 == false && state != "nCJ15"){
+				state = "nCnJ";
+			}
+		}
+		else if(stageColor == "black"){
+			if(col2 == false && col3 == false && state != "nCJ15"){
+				state = "nCnJ";
+			}
+		}
+	
+	
+		if(keys && keys[65]){
+			x -= lateralSpeed;
+		}
+		if(keys && keys[68]){
+			x += lateralSpeed;
+		}
+		if(keys && keys[87] && ground && timer >= interval){
+			if(jumpHeight == originalJumpHeight){
+				jumpAudio.play();
+			}
+			timer = 0;
+			state = "nCJ15";
+		}
+		//console.log(state);
+
+		if(state == "nCJ15"){
+			y -= jumpHeight;
+			jumpHeight--;
+			if(player.rotation < 360){
+				player.setTransform(player.x,player.y,1,1,player.rotation + 0.31416,0,0,0,0);
+			}
+			else{
+				player.rotation = 0;
+			}
+			console.log(player.rotation);
+
+			if(jumpHeight == 0){ 
+				//jumpHeight = 0;
+				state = "nCJ0";
+			}
+		}
+		else{
+			if(stageColor == "white"){
+				if(col || col1 || col4){
+					state = "CnJ";
+					fallSpeed = 1;
+				}	
+			}
+			else if(stageColor == "black"){
+				if(col2 || col3){
+					state = "CnJ";
+					fallSpeed = 1;
+				}
+			}
+		}
+
+		
+	}
+	else if(stage == "level2"){
+		let col = boxesIntersect(player,base);
+		let col1 = boxesIntersect(player,plat1);
+		let col2 = boxesIntersect(player,plat2);
+		let col3 = boxesIntersect(player,plat3);
+		let col4 = boxesIntersect(player,plat4);
+		let col5 = boxesIntersect(player,plat5);
+		let col6 = boxesIntersect(player,plat6);
+		let col7 = boxesIntersect(player,plat7);
+		let col8 = boxesIntersect(player,plat8);
+		let col9 = boxesIntersect(player,plat9);
+		let win = boxesIntersect(player,door);
+		
+		if(win && stageColor == "white"){
+			winAudio.play();
+			app.stage.removeChild(player);
+			app.stage.addChild(instructions);
+			clearInterval(move);
+			setTimeout(clear,3000);
+			setTimeout(setup,3010);
+		}
+		
+		if(stageColor == "white"){
+			if(col == false && col1 == false && col3 == false && col5 == false && col7 == false && col9 == false && state != "nCJ15"){
+				state = "nCnJ";
+			}
+		}
+		else if(stageColor == "black"){
+			if(col2 == false && col4 == false && col6 == false && col8 == false && state != "nCJ15"){
+				state = "nCnJ";
+			}
+		}
+	
+	
+		if(keys && keys[65]){
+			x -= lateralSpeed;
+		}
+		if(keys && keys[68]){
+			x += lateralSpeed;
+		}
+		if(keys && keys[87] && ground && timer >= interval){
+			if(jumpHeight == originalJumpHeight){
+				jumpAudio.play();
+			}
+			timer = 0;
+			state = "nCJ15";
+		}
+		if(state == "nCJ15"){
+			y -= jumpHeight;
+			jumpHeight--;
+			if(jumpHeight == 0){ 
+				//jumpHeight = 0;
+				state = "nCJ0";
+			}
+		}
+		else{
+			if(stageColor == "white"){
+				if(col || col1 || col3 || col5 || col7 || col9){
+					state = "CnJ";
+					fallSpeed = 1;
+				}	
+			}
+			else if(stageColor == "black"){
+				if(col2 || col4 || col6 || col8){
+					state = "CnJ";
+					fallSpeed = 1;
+				}
+			}
+		}
+	}
+	else if(stage == "level3"){
+		let col = boxesIntersect(player,base);
+		let col1 = boxesIntersect(player,plat1);
+		let col2 = boxesIntersect(player,plat2);
+		let col3 = boxesIntersect(player,plat3);
+		let col4 = boxesIntersect(player,plat4);
+		let col5 = boxesIntersect(player,plat5);
+		let col6 = boxesIntersect(player,plat6);
+		let col7 = boxesIntersect(player,plat7);
+		let col8 = boxesIntersect(player,plat8);
+		let col9 = boxesIntersect(player,plat9);
+		let col10 = boxesIntersect(player,plat10);
+		let col11 = boxesIntersect(player,plat11);
+		let col12 = boxesIntersect(player,plat12);
+		let win = boxesIntersect(player,door);
+		
+		if(win && stageColor == "white"){
+			winAudio.play();
+			app.stage.removeChild(player);
+			app.stage.addChild(instructions);
+			clearInterval(move);
+			setTimeout(clear,3000);
+			setTimeout(setup,3010);
+		}
+		
+		if(stageColor == "white"){
+			if(col == false && col4 == false && col8 == false && col12 == false && state != "nCJ15"){
+				state = "nCnJ";
+			}
+		}
+		else if(stageColor == "black"){
+			if(col2 == false && col6 == false && col10 == false && state != "nCJ15"){
+				state = "nCnJ";
+			}
+		}
+	
+		if(col1 || col3 || col5 || col7 || col9 || col11){
+			if(stageColor == "white"){
+				player.x -= 10;
+				col1 = boxesIntersect(player,plat1);
+				col3 = boxesIntersect(player,plat3);
+				col5 = boxesIntersect(player,plat5);
+				col7 = boxesIntersect(player,plat7);
+				col9 = boxesIntersect(player,plat9);
+				col11 = boxesIntersect(player,plat11);
+				if(col1 || col3 || col5 || col7 || col9 || col11){
+					player.x += 20;
+				}
+			}
+			
+		}
+		if(keys && keys[65]){
+			if(col1 == false && col3 == false && col5 == false && col7 == false && col9 == false && col11 == false && stageColor == "white"){
+				x -= lateralSpeed;
+			}
+			else if(stageColor == "black"){
+				x -= lateralSpeed;
+			}
+		
+		}
+		if(keys && keys[68]){
+			if(col1 == false && col3 == false && col5 == false && col7 == false && col9 == false && col11 == false && stageColor == "white"){
+				x += lateralSpeed;
+			}
+			else if(stageColor == "black"){
+				x += lateralSpeed;
+			}
+		}
+		if(keys && keys[87] && ground && timer >= interval){
+			if(jumpHeight == originalJumpHeight){
+				jumpAudio.play();
+			}
+			timer = 0;
+			state = "nCJ15";
+		}
+		if(state == "nCJ15"){
+			y -= jumpHeight;
+			jumpHeight--;
+			if(jumpHeight == 0){ 
+				//jumpHeight = 0;
+				state = "nCJ0";
+			}
+		}
+		else{
+			if(stageColor == "white"){
+				if(col || col4 || col8 || col12){
+					state = "CnJ";
+					fallSpeed = 1;
+				}	
+			}
+			else if(stageColor == "black"){
+				if(col2 || col6 || col10){
+					state = "CnJ";
+					fallSpeed = 1;
+				}
+			}
+		}
+	}
+
+	physics();
+
+	if(player.x < 15){
+		player.x = 15;
+	}
+	if(player.x > 785){
+		player.x = 785;
+	}
+	if(player.y < 15){
+		player.y = 15;
+	}
+	player.x += x;
+	player.y += y;
+	x = 0;
+	y = 0;
+	pX = player.x;
+	pY = player.y;
+}
+
+function physics(){
+	switch(state){
+		case "CnJ":
+			ground = true;
+			jumpHeight = originalJumpHeight;
+			fallSpeed = 1;
+			break;
+		case "nCnJ":
+			ground = false;
+			gravity();
+			break;
+		case "nCJ15":
+			ground = true;
+			timer = 0;
+			break;
+		case "nCJ0":
+			ground = false;
+			gravity();
+			break;	
+		default:
+			break;
+	}
+}
+
+
+//collision method
+function boxesIntersect(a, b)
+{
+  var ab = a.getBounds();
+  var bb = b.getBounds();
+  return ab.x + ab.width > bb.x && ab.x < bb.x + bb.width && ab.y + ab.height > bb.y && ab.y < bb.y + bb.height;
+}
+
+//Gravity method, as well as handling the player falling out of the level
+function gravity(){
+	if(fallSpeed > maxVel){
+		fallSpeed = maxVel;
+	}
+	else{
+		fallSpeed++;
+	}
+	player.y += fallSpeed;
+	if(player.y > 700){
+		if(stage == "level3"){
+			pX = 25;
+			pY = 80;
+			
+		}
+		else{
+			pX = 50;
+			pY = 400;
+			
+		}
+		stageColor = "black";
+		flip();
+		loseHealth();
+		
+	}
+}
+
+//method to handle loss of health, called whenever the player falls out of the world
+function loseHealth(){
+	if(deathAudio.paused == false){
+		deathAudio.currentTime = 0;
+	}
+	else{
+		deathAudio.play();
+	}
+	
+	lives--;
+	if(lives == 2){
+		app.stage.removeChild(healthBox3);
+	}
+	else if(lives == 1){
+		app.stage.removeChild(healthBox2);
+	}
+	else if(lives == 0){
+		clearInterval(move);
+		clear();
+		setup();
+	}
+	//localStorage.setItem("health",lives);
+}
+
+//flips the colors of the proper elements within each level
+function flip(){
+	if(swooshAudio.paused == false){
+		swooshAudio.currentTime = 0;
+	}
+	else{
+		swooshAudio.play();
+	}
+	if(stageColor == "white"){
+			app.stage.removeChild(player);
+			let rot = player.rotation;
+			player = makeRectangle(30,30,0x000000);
+			player.x = pX;
+			player.y = pY;
+			player.rotation = rot;
+			app.stage.addChild(player);
+	
+			app.stage.removeChild(background);
+			background = makeRectangle(800,500,0xFFFFFF);
+			background.x = 400;
+			background.y = 250;
+			
+			if(lives == 3){
+				app.stage.removeChild(healthBox1);
+				healthBox1 = makeRectangle(20,20,0x000000);
+				healthBox1.x = 80;
+				healthBox1.y = 14;
+	
+				app.stage.removeChild(healthBox2);
+				healthBox2 = makeRectangle(20,20,0x000000);
+				healthBox2.x = 105;
+				healthBox2.y = 14;
+	
+				app.stage.removeChild(healthBox3);
+				healthBox3 = makeRectangle(20,20,0x000000);
+				healthBox3.x = 130;
+				healthBox3.y = 14;
+			
+				app.stage.addChild(healthBox1);
+				app.stage.addChild(healthBox2);
+				app.stage.addChild(healthBox3);
+			}
+			else if(lives == 2){
+				app.stage.removeChild(healthBox1);
+				healthBox1 = makeRectangle(20,20,0x000000);
+				healthBox1.x = 80;
+				healthBox1.y = 14;
+	
+				app.stage.removeChild(healthBox2);
+				healthBox2 = makeRectangle(20,20,0x000000);
+				healthBox2.x = 105;
+				healthBox2.y = 14;
+			
+				app.stage.addChild(healthBox1);
+				app.stage.addChild(healthBox2);
+			}
+			else if(lives == 1){
+				app.stage.removeChild(healthBox1);
+				healthBox1 = makeRectangle(20,20,0x000000);
+				healthBox1.x = 80;
+				healthBox1.y = 14;
+			
+				app.stage.addChild(healthBox1);
+			}
+			
+			app.stage.removeChild(text);
+			text = new PIXI.Text('Lives: ',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0x000000, align : 'left'});
+			text.x = 2;
+			text.y = 0;
+			
+			if(stage == "level1"){
+				app.stage.removeChild(levelTag);
+				levelTag = new PIXI.Text('Level: 1',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0x000000, align : 'left'});
+				levelTag.x = 710;
+				levelTag.y = 0;
+			}
+			else if(stage == "level2"){
+				app.stage.removeChild(levelTag);
+				levelTag = new PIXI.Text('Level: 2',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0x000000, align : 'left'});
+				levelTag.x = 710;
+				levelTag.y = 0;
+			}
+			else if(stage == "level3"){
+				app.stage.removeChild(levelTag);
+				levelTag = new PIXI.Text('Level: 3',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0x000000, align : 'left'});
+				levelTag.x = 710;
+				levelTag.y = 0;
+			}
+			
+			app.stage.addChild(text);
+			app.stage.addChild(levelTag);
+			
+			app.stage.addChildAt(background,0);
+			stageColor = "black";
+
+		}
+		else if(stageColor == "black"){
+			app.stage.removeChild(player);
+			let rot = player.rotation;
+			player = makeRectangle(30,30,0xFFFFFF);
+			player.x = pX;
+			player.y = pY;
+			player.rotation = rot;
+			app.stage.addChild(player);
+		
+			app.stage.removeChild(background);
+			background = makeRectangle(800,500,0x000000);
+			background.x = 400;
+			background.y = 250;
+			
+			if(lives == 3){
+				app.stage.removeChild(healthBox1);
+				healthBox1 = makeRectangle(20,20,0xFFFFFF);
+				healthBox1.x = 80;
+				healthBox1.y = 14;
+	
+				app.stage.removeChild(healthBox2);
+				healthBox2 = makeRectangle(20,20,0xFFFFFF);
+				healthBox2.x = 105;
+				healthBox2.y = 14;
+	
+				app.stage.removeChild(healthBox3);
+				healthBox3 = makeRectangle(20,20,0xFFFFFF);
+				healthBox3.x = 130;
+				healthBox3.y = 14;
+			
+				app.stage.addChild(healthBox1);
+				app.stage.addChild(healthBox2);
+				app.stage.addChild(healthBox3);
+			}
+			else if(lives == 2){
+				app.stage.removeChild(healthBox1);
+				healthBox1 = makeRectangle(20,20,0xFFFFFF);
+				healthBox1.x = 80;
+				healthBox1.y = 14;
+	
+				app.stage.removeChild(healthBox2);
+				healthBox2 = makeRectangle(20,20,0xFFFFFF);
+				healthBox2.x = 105;
+				healthBox2.y = 14;
+			
+				app.stage.addChild(healthBox1);
+				app.stage.addChild(healthBox2);
+			}
+			else if(lives == 1){
+				app.stage.removeChild(healthBox1);
+				healthBox1 = makeRectangle(20,20,0xFFFFFF);
+				healthBox1.x = 80;
+				healthBox1.y = 14;
+			
+				app.stage.addChild(healthBox1);
+			}
+			
+			app.stage.removeChild(text);
+			text = new PIXI.Text('Lives: ',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+			text.x = 2;
+			text.y = 0;
+
+			if(stage == "level1"){
+				app.stage.removeChild(levelTag);
+				levelTag = new PIXI.Text('Level: 1',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+				levelTag.x = 710;
+				levelTag.y = 0;
+			}
+			else if(stage == "level2"){
+				app.stage.removeChild(levelTag);
+				levelTag = new PIXI.Text('Level: 2',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+				levelTag.x = 710;
+				levelTag.y = 0;
+			}
+			else if(stage == "level3"){
+				app.stage.removeChild(levelTag);
+				levelTag = new PIXI.Text('Level: 3',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+				levelTag.x = 710;
+				levelTag.y = 0;
+			}
+			
+			app.stage.addChild(text);
+			app.stage.addChild(levelTag);
+			
+			app.stage.addChildAt(background,0);
+			stageColor = "white";
+
+		}
+}
+
+//clears out the current stage in preparation for the setting of the next one
+function clear(newStage){
+	if(lives > 0){
+		if(stage == "level1"){
+			stage = "level2";
+			app.stage.removeChild(healthBox1);
+			app.stage.removeChild(healthBox2);
+			app.stage.removeChild(healthBox3);
+			app.stage.removeChild(text);
+			app.stage.removeChild(base);
+			app.stage.removeChild(plat1);
+			app.stage.removeChild(door);
+			app.stage.removeChild(plat2);
+			app.stage.removeChild(plat3);
+			app.stage.removeChild(plat4);
+			app.stage.removeChild(background);
+			app.stage.removeChild(instructions);
+			app.stage.removeChild(levelTag);
+		}
+		else if(stage == "level2"){
+			stage = "level3";
+			app.stage.removeChild(healthBox1);
+			app.stage.removeChild(healthBox2);
+			app.stage.removeChild(healthBox3);
+			app.stage.removeChild(text);
+			app.stage.removeChild(base);
+			app.stage.removeChild(plat1);
+			app.stage.removeChild(door);
+			app.stage.removeChild(plat2);
+			app.stage.removeChild(plat3);
+			app.stage.removeChild(plat4);
+			app.stage.removeChild(plat5);
+			app.stage.removeChild(plat6);
+			app.stage.removeChild(plat7);
+			app.stage.removeChild(plat8);
+			app.stage.removeChild(plat9);
+			app.stage.removeChild(background);
+			app.stage.removeChild(instructions);
+			app.stage.removeChild(levelTag);
+		}
+		else if(stage == "level3"){
+			stage = "end";
+			app.stage.removeChild(healthBox1);
+			app.stage.removeChild(healthBox2);
+			app.stage.removeChild(healthBox3);
+			app.stage.removeChild(text);
+			app.stage.removeChild(base);
+			app.stage.removeChild(plat1);
+			app.stage.removeChild(door);
+			app.stage.removeChild(plat2);
+			app.stage.removeChild(plat3);
+			app.stage.removeChild(plat4);
+			app.stage.removeChild(plat5);
+			app.stage.removeChild(plat6);
+			app.stage.removeChild(plat7);
+			app.stage.removeChild(plat8);
+			app.stage.removeChild(plat9);
+			app.stage.removeChild(plat10);
+			app.stage.removeChild(plat11);
+			app.stage.removeChild(plat12);
+			app.stage.removeChild(background);
+			app.stage.removeChild(instructions);
+			app.stage.removeChild(levelTag);
+		}
+	}
+	else if(lives <= 0){
+		if(stage == "level1"){
+			stage = "death";
+			app.stage.removeChild(healthBox1);
+			app.stage.removeChild(healthBox2);
+			app.stage.removeChild(healthBox3);
+			app.stage.removeChild(text);
+			app.stage.removeChild(base);
+			app.stage.removeChild(plat1);
+			app.stage.removeChild(door);
+			app.stage.removeChild(plat2);
+			app.stage.removeChild(plat3);
+			app.stage.removeChild(plat4);
+			app.stage.removeChild(player);
+			app.stage.removeChild(background);
+			app.stage.removeChild(levelTag);
+		}
+		else if(stage == "level2"){
+			stage = "death";
+			app.stage.removeChild(healthBox1);
+			app.stage.removeChild(healthBox1);
+			app.stage.removeChild(healthBox2);
+			app.stage.removeChild(healthBox3);
+			app.stage.removeChild(text);
+			app.stage.removeChild(base);
+			app.stage.removeChild(plat1);
+			app.stage.removeChild(door);
+			app.stage.removeChild(plat2);
+			app.stage.removeChild(plat3);
+			app.stage.removeChild(plat4);
+			app.stage.removeChild(plat5);
+			app.stage.removeChild(plat6);
+			app.stage.removeChild(plat7);
+			app.stage.removeChild(plat8);
+			app.stage.removeChild(plat9);
+			app.stage.removeChild(background);
+			app.stage.removeChild(instructions);
+			app.stage.removeChild(levelTag);
+			app.stage.removeChild(player);
+		}
+		else if(stage == "level3"){
+			stage = "death";
+			app.stage.removeChild(base);
+			app.stage.removeChild(player);
+			app.stage.removeChild(background);
+			app.stage.removeChild(levelTag);
+			app.stage.removeChild(healthBox1);
+			app.stage.removeChild(healthBox1);
+			app.stage.removeChild(healthBox2);
+			app.stage.removeChild(healthBox3);
+			app.stage.removeChild(text);
+			app.stage.removeChild(plat1);
+			app.stage.removeChild(plat2);
+			app.stage.removeChild(plat3);
+			app.stage.removeChild(plat4);
+			app.stage.removeChild(plat5);
+			app.stage.removeChild(plat6);
+			app.stage.removeChild(plat7);
+			app.stage.removeChild(plat8);
+			app.stage.removeChild(plat9);
+			app.stage.removeChild(plat10);
+			app.stage.removeChild(plat11);
+			app.stage.removeChild(plat12);
+			app.stage.removeChild(door);
+		}
+	}
+	
+	if(stage == "inst"){
+		stage = "menu";
+		app.stage.removeChild(text);
+		app.stage.removeChild(start);
+		app.stage.removeChild(back);
+		app.stage.removeChild(start);
+		app.stage.removeChild(pointers);
+	}
+	else if(stage == "menu"){
+		if(newStage == "inst"){
+			stage = "inst";
+			app.stage.removeChild(text);
+			app.stage.removeChild(slogan);
+			app.stage.removeChild(instructions);
+			app.stage.removeChild(start);
+			app.stage.removeChild(startCont);
+			app.stage.removeChild(pointers);
+			app.stage.removeChild(options);
+		}
+		else{
+			stage = "level1";
+			app.stage.removeChild(text);
+			app.stage.removeChild(slogan);
+			app.stage.removeChild(instructions);
+			app.stage.removeChild(start);
+			app.stage.removeChild(startCont);
+			app.stage.removeChild(pointers);
+			app.stage.removeChild(options);
+		}
+	
+	}
+
+	else if(stage == "death"){	
+		if(newStage == "level1"){
+			stage = "level1";
+			app.stage.removeChild(text);
+			app.stage.removeChild(slogan);
+			app.stage.removeChild(instructions);
+			app.stage.removeChild(start);
+			app.stage.removeChild(back);
+			app.stage.removeChild(pointers);
+		}
+		else if(newStage == "menu"){
+			stage = "menu";
+			app.stage.removeChild(text);
+			app.stage.removeChild(slogan);
+			app.stage.removeChild(instructions);
+			app.stage.removeChild(start);
+			app.stage.removeChild(back);
+			app.stage.removeChild(pointers);
+		}
+	
+	}
+	else if(stage == "end"){
+		if(newStage == "level1"){
+			stage = "level1";
+			app.stage.removeChild(text);
+			app.stage.removeChild(slogan);
+			app.stage.removeChild(instructions);
+			app.stage.removeChild(start);
+			app.stage.removeChild(back);
+			app.stage.removeChild(pointers);
+		}
+		else if(newStage == "menu"){
+			stage = "menu";
+			app.stage.removeChild(text);
+			app.stage.removeChild(slogan);
+			app.stage.removeChild(instructions);
+			app.stage.removeChild(start);
+			app.stage.removeChild(back);
+			app.stage.removeChild(pointers);
+		}
+	}
+	
+}
+
+window.onload = setup();
+</script>
+</body>
+</html>
