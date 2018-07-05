@@ -5,7 +5,7 @@ This is just a little project I did in IGME-230, also known as Web Design and Im
 
 More realistic physics - **Finished** 
 
-Jumping animation - **Not Finished** 
+Jumping animation - **Finished** 
 
 Better sound effects - **Not Finished** 
 
@@ -13,7 +13,7 @@ End sound effects on screen change - **Not Finished**
 
 Screen transitions - **Not Finished** 
 
-Reworked main screen - **Not Finished** 
+Reworked non-game screens - **Not Finished (In Progress, Cleaned Up)** 
 
 More levels - **Not Finished** 
 
@@ -21,7 +21,7 @@ Moving platforms - **Not Finished**
 
 Spikes - **Not Finished** 
 
-Replace the text navigation instructions with buttons - **Not Finished (In Progress)** 
+Replace the text navigation instructions with buttons - **Finished** 
 
 Timer for speedruns - **Not Finished** 
 
