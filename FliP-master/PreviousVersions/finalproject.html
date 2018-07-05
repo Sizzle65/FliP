@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>PixiJS-4</title>
+</head>
+<body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.6.0/pixi.min.js"></script>
+<script>
+const app = new PIXI.Application(800,500);
+document.body.appendChild(app.view); 
+
+let ground  = true;
+let jumping = false;
+let originalJumpHeight = 20;
+let jumpHeight = originalJumpHeight;
+let jumpInterval;
+let x = 0;
+let y = 0;
+let keys = [];
+let state = "CnJ";
+let stage1White = [];
+let stage1Black = [];
+let pX, pY, player, base, plat1, plat2, plat3, plat4, door;
+let stageColor = "white";
+let lives = 3;
+let stage = "menu";
+
+function setup(){
+if(stage == "menu"){
+	
+}
+else if(stage == "level1"){
+	let background = makeRectangle(800,500,0x000000);
+	background.x = 400;
+	background.y = 250;
+
+	player = makeRectangle(30,30,0xFFFFFF);
+	player.x = 100;
+	player.y = app.stage.height + 470;
+
+	base = makeRectangle(400,15,0xFFFFFF);
+	base.x = 0;
+	base.y = app.stage.height + 490;
+
+	plat1 = makeRectangle(400,15,0xFFFFFF);
+	plat1.x = 500;
+	plat1.y = app.stage.height + 400;
+
+	door = makeRectangle(40,60,0xFFFFFF);
+	door.x = 700;
+	door.y = app.stage.height + 100;
+
+	plat2 = makeRectangle(400,15,0x000000);
+	plat2.x = 0;
+	plat2.y = app.stage.height + 300;
+
+	plat3 = makeRectangle(200,15,0x000000);
+	plat3.x = 400;
+	plat3.y = app.stage.height + 150;
+
+	plat4 = makeRectangle(200,15,0xFFFFFF);
+	plat4.x = 700;
+	plat4.y = app.stage.height + 150;
+
+	let text = new PIXI.Text('Lives: ',{fontFamily : 'Arial', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+	text.x = 2;
+	text.y = 0;
+
+	let healthBox1 = makeRectangle(20,20,0xFFFFFF);
+	healthBox1.x = 80;
+	healthBox1.y = 14;
+
+	let healthBox2 = makeRectangle(20,20,0xFFFFFF);
+	healthBox2.x = 105;
+	healthBox2.y = 14;
+
+	let healthBox3 = makeRectangle(20,20,0xFFFFFF);
+	healthBox3.x = 130;
+	healthBox3.y = 14;
+
+	stage1White.push(base);
+	stage1White.push(plat1);
+	stage1White.push(door);
+	stage1White.push(plat4);
+
+	stage1Black.push(plat2);
+	stage1Black.push(plat3);
+
+	app.stage.addChild(healthBox1);
+	app.stage.addChild(healthBox2);
+	app.stage.addChild(healthBox3);
+	app.stage.addChild(text);
+	app.stage.addChild(base);
+	app.stage.addChild(plat1);
+	app.stage.addChild(door);
+	app.stage.addChild(plat2);
+	app.stage.addChild(plat3);
+	app.stage.addChild(plat4);
+	app.stage.addChildAt(player,6);
+	app.stage.addChildAt(background,0);
+}
+else if(stage == "level2"){
+
+}
+else if(stage == "level3"){
+
+}
+}
+
+
+function makeRectangle(width=50,height=50,color=0xFF0000){
+	// http://pixijs.download/dev/docs/PIXI.Graphics.html
+	let rect = new PIXI.Graphics()
+	rect.beginFill(color);
+	//rect.lineStyle(4, 0xFFFF00, 1);
+	rect.drawRect(-width*.5, -height*.5, width, height);
+	rect.endFill();
+	return rect
+}
+
+document.addEventListener('keypress',function flip(e){
+	if(e.keyCode == 32){
+		if(stageColor == "white"){
+			app.stage.removeChild(player);
+			player = makeRectangle(30,30,0x000000);
+			player.x = pX;
+			player.y = pY;
+			app.stage.addChild(player);
+		
+			app.stage.removeChild(background);
+			background = makeRectangle(800,500,0xFFFFFF);
+			background.x = 400;
+			background.y = 250;
+			/*
+			app.stage.removeChild(base);
+			app.stage.addChildAt(base,0);
+			app.stage.removeChild(plat1);
+			app.stage.addChildAt(plat1,0);
+			app.stage.removeChild(plat4);
+			app.stage.addChildAt(plat4,0);
+			*/
+			app.stage.addChildAt(background,0);
+			stageColor = "black";
+
+			
+			app.stage.removeChild(plat2);
+			app.stage.addChildAt(plat2,1);
+			app.stage.removeChild(plat3);
+			app.stage.addChildAt(plat3,1);
+		}
+		else if(stageColor == "black"){
+			app.stage.removeChild(player);
+			player = makeRectangle(30,30,0xFFFFFF);
+			player.x = pX;
+			player.y = pY;
+			app.stage.addChild(player);
+		
+			app.stage.removeChild(background);
+			background = makeRectangle(800,500,0x000000);
+			background.x = 400;
+			background.y = 250;
+			app.stage.addChildAt(background,0);
+			stageColor = "white";
+			/*
+			app.stage.removeChild(plat2);
+			app.stage.addChildAt(plat2,3);
+			app.stage.removeChild(plat3);
+			app.stage.addChildAt(plat3,3);
+			*/
+			app.stage.removeChild(base);
+			app.stage.addChildAt(base,1);
+			app.stage.removeChild(plat1);
+			app.stage.addChildAt(plat1,1);
+			app.stage.removeChild(plat4);
+			app.stage.addChildAt(plat4,1);
+		}
+		
+
+	}
+});
+
+document.addEventListener('keydown',function(e) {	
+	
+	if(e.keyCode == 65){
+		keys[e.keyCode] = true;
+	}
+	if(e.keyCode == 68){
+		keys[e.keyCode] = true;
+	}
+	if(e.keyCode == 87){
+		keys[e.keyCode] = true;
+	}
+});
+
+document.addEventListener('keyup',function(e) {	
+	
+	if(e.keyCode == 65){
+		keys[e.keyCode] = false;
+	}
+	if(e.keyCode == 68){
+		keys[e.keyCode] = false;
+	}
+	if(e.keyCode == 87){
+		keys[e.keyCode] = false;
+	}
+});
+
+
+function movement(){
+	let col = boxesIntersect(player,base);
+	let col1 = boxesIntersect(player,plat1);
+	let col2 = boxesIntersect(player,plat2);
+	let col3 = boxesIntersect(player,plat3);
+	let col4 = boxesIntersect(player,plat4);
+	let win = boxesIntersect(player,door);
+
+	if(win){
+		//go to next stage
+	}
+
+	if(stageColor == "white"){
+		if(col == false && col1 == false && col4 == false){
+			state = "nCnJ";
+		}
+	}
+	else if(stageColor == "black"){
+		if(col2 == false && col3 == false){
+			state = "nCnJ";
+		}
+	}
+	
+
+	if(keys && keys[65]){
+		x -= 5;
+	}
+	if(keys && keys[68]){
+		x += 5;
+	}
+	if(keys && keys[87] && ground){
+		state = "nCJ15";
+		y -= jumpHeight;
+		jumpHeight--;
+		if(jumpHeight == 0){ 
+			jumpHeight = 0;
+			state = "nCJ0";
+		}
+	}
+	else{
+		if(stageColor == "white"){
+			if(col || col1 || col4){
+				state = "CnJ";
+			}
+		}
+		else if(stageColor == "black"){
+			if(col2 || col3){
+				state = "CnJ";
+			}
+		}
+	}
+
+	physics();
+
+	if(player.x < 15){
+		player.x = 15;
+	}
+	if(player.x > 785){
+		player.x = 785;
+	}
+	player.x += x;
+	player.y += y;
+	x = 0;
+	y = 0;
+	pX = player.x;
+	pY = player.y;
+}
+
+function physics(){
+	switch(state){
+		case "CnJ":
+			ground = true;
+			jumpHeight = originalJumpHeight;
+			break;
+		case "nCnJ":
+			ground = false;
+			gravity();
+			break;
+		case "nCJ15":
+			ground = true;
+			break;
+		case "nCJ0":
+			ground = false;
+			gravity();
+			break;	
+		default:console.Log("Broken");
+			break;
+	}
+}
+
+
+
+function boxesIntersect(a, b)
+{
+  var ab = a.getBounds();
+  var bb = b.getBounds();
+  return ab.x + ab.width > bb.x && ab.x < bb.x + bb.width && ab.y + ab.height > bb.y && ab.y < bb.y + bb.height;
+}
+
+function gravity(){
+	player.y += 10;
+	if(player.y > 700){
+		player.x = 100;
+		player.y = 400;
+		pX = 100;
+		pY = 400;
+		stageColor = "black";
+		flip();
+		loseHealth();
+	}
+}
+
+function loseHealth(){
+	lives--;
+	if(lives == 2){
+		app.stage.removeChild(healthBox3);
+	}
+	else if(lives == 1){
+		app.stage.removeChild(healthBox2);
+	}
+	else if(lives == 0){
+		app.stage.removeChild(healthBox1);
+		stage = "menu";
+	}
+}
+
+function flip(){
+	if(stageColor == "white"){
+		app.stage.removeChild(player);
+		player = makeRectangle(30,30,0x000000);
+		player.x = pX;
+		player.y = pY;
+		app.stage.addChild(player);
+	
+		app.stage.removeChild(background);
+		background = makeRectangle(800,500,0xFFFFFF);
+		background.x = 400;
+		background.y = 250;
+
+		app.stage.addChildAt(background,0);
+		stageColor = "black";
+
+		app.stage.removeChild(plat2);
+		app.stage.addChildAt(plat2,1);
+		app.stage.removeChild(plat3);
+		app.stage.addChildAt(plat3,1);
+	}
+	else if(stageColor == "black"){
+		app.stage.removeChild(player);
+		player = makeRectangle(30,30,0xFFFFFF);
+		player.x = pX;
+		player.y = pY;
+		app.stage.addChild(player);
+		
+		app.stage.removeChild(background);
+		background = makeRectangle(800,500,0x000000);
+		background.x = 400;
+		background.y = 250;
+		app.stage.addChildAt(background,0);
+		stageColor = "white";
+
+		app.stage.removeChild(base);
+		app.stage.addChildAt(base,1);
+		app.stage.removeChild(plat1);
+		app.stage.addChildAt(plat1,1);
+		app.stage.removeChild(plat4);
+		app.stage.addChildAt(plat4,1);
+	}
+}
+
+setInterval(movement,20);
+</script>
+</body>
+</html>
