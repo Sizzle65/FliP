@@ -12,34 +12,63 @@
 const app = new PIXI.Application(800,500);
 document.body.appendChild(app.view); 
 
+let menuState = false;
+let newGameButton = {name:"New Game",x:282,y:260};
+let continueGameButton = {name:"Continue",x:282,y:310};
+let optionsButton = {name:"Options",x:282,y:360};
+let controlsButton = {name:"Controls",x:282,y:410};
+let menuItems = [newGameButton,continueGameButton,optionsButton,controlsButton];
+let resumeButton = {name:"Resume",x:300,y:140};
+let restartButton = {name:"Restart",x:300,y:195};
+let optionsButtonGame = {name:"Options",x:300,y:252};
+let controlsButtonGame = {name:"Controls",x:300,y:315};
+let exitButton = {name:"Exit",x:300,y:372};
+let gameMenuItems = [resumeButton,restartButton,optionsButtonGame,controlsButtonGame,exitButton];
+let index = 0;
+let indexDeath = 0;
+let indexGame = 0;
+let maxVel = 20;
+let interval = 20;
+let timer = interval;
+let lateralSpeed = 5;
+let cooldown = false;
 let ground  = true;
 let jumping = false;
 let originalJumpHeight = 20;
+let fallSpeed = 1;
 let jumpHeight = originalJumpHeight;
 let jumpInterval;
 let x = 0;
 let y = 0;
 let keys = [];
 let state = "CnJ";
-let pX, pY, player, base, plat1, plat2, plat3, plat4, plat5, plat6,plat7,plat8,plat9,plat10,plat11,plat12, door,text,slogan,instructions,start,background,healthBox1,healthBox2,healthBox3,back,move,levelTag;
+let pX, pY, player, base, plat1, plat2, plat3, plat4, plat5, plat6,plat7,plat8,plat9,plat10,plat11,plat12, door,text,slogan,instructions,start,background,healthBox1,healthBox2,healthBox3,back,move,levelTag,startCont,options,pointers,gameMenu;
 let stageColor = "white";
 let lives = 3;
-let stage = "menu";
+let stage = "level1";
 let audioMain = new Audio("mainMusic.mp3");
+audioMain.volume = 0.2;
 let jumpAudio = new Audio("jump.mp3");
+jumpAudio.volume = 0.2;
 let winAudio = new Audio("win.mp3");
+winAudio.volume = 0.1;
 let deathAudio = new Audio("death2.mp3");
+deathAudio.volume = 0.2;
 let winScreenAudio = new Audio("winScreen.mp3");
+winScreenAudio.volume = 0.2;
 let lossAudio = new Audio("loss.mp3");
+lossAudio.volume = 0.2;
 let swooshAudio = new Audio("swoosh.mp3");
+swooshAudio.volume = 0.2;
 
 //called whenever the webpage loads, checks the local storage to see if the game had been started before, 
 //if it has it sets the stage and health to the proper value then calls setup, also starts background music
+
 function load(){
-	if(localStorage.getItem("stage") != null && localStorage.getItem("health") != null){
+	/*if(localStorage.getItem("stage") != null && localStorage.getItem("health") != null){
 		stage = localStorage.getItem("stage");
 		lives = localStorage.getItem("health");
-	}
+	}*/
 	audioMain.loop = true;
 	audioMain.play();
 	setup();
@@ -47,28 +76,45 @@ function load(){
 
 //sets up the stage depending on the value of stage, creates all necessary PIXI elements 
 function setup(){
-	localStorage.setItem("stage",stage);
+	//localStorage.setItem("stage",stage);
+	menuState = false;
 	if(stage == "menu"){
-		text = new PIXI.Text('FLiP ',{fontFamily : 'Arial', fontSize: 200, fill : 0xFFFFFF, align : 'center', letterSpacing : 20});
+		text = new PIXI.Text('FLiP ',{fontFamily : 'Century Gothic', fontSize: 175, fill : 0xFFFFFF, align : 'center', letterSpacing : 40});
 		text.x = 180;
-		text.y = 0;
+		//text.y = 0;
 
-		slogan = new PIXI.Text('A puzzle platformer, with a twist! ',{fontFamily : 'Arial', fontSize: 30, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
-		slogan.x = 180;
-		slogan.y = 235;
+		slogan = new PIXI.Text('A puzzle platformer, with a twist! ',{fontFamily : 'Century Gothic', fontSize: 30, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		slogan.x = 140;
+		slogan.y = 200;
 
-		instructions = new PIXI.Text('Hit Space to learn how to play.',{fontFamily : 'Arial', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
-		instructions.x = 250;
-		instructions.y = 350;
+		start = new PIXI.Text('New Game',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		start.x = 315;
+		start.y = 280;
 
-		start = new PIXI.Text('Press Enter to start!',{fontFamily : 'Arial', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
-		start.x = 300;
-		start.y = 450;
+		startCont = new PIXI.Text('Continue',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xA9A9A9, align : 'center', letterSpacing : 1});
+		startCont.x = 325;
+		startCont.y = 330;
+		
+		options = new PIXI.Text('Options',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xA9A9A9, align : 'center', letterSpacing : 1});
+		options.x = 332;
+		options.y = 380;
+		
+		instructions = new PIXI.Text('Controls',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		instructions.x = 328;
+		instructions.y = 430;
+		
+		pointers = new PIXI.Sprite.fromImage('MenuPointers2.PNG');
+		pointers.x = menuItems[index].x;
+		pointers.y = menuItems[index].y;
 
 		app.stage.addChild(text);
 		app.stage.addChild(slogan);
-		app.stage.addChild(instructions);
 		app.stage.addChild(start);
+		app.stage.addChild(startCont);
+		app.stage.addChild(options);
+		app.stage.addChild(instructions);
+		app.stage.addChild(pointers);
+		
 	}
 	else if(stage == "level1"){
 		lives = 3;
@@ -104,15 +150,15 @@ function setup(){
 		plat4.x = 700;
 		plat4.y = app.stage.height + 150;
 
-		text = new PIXI.Text('Lives: ',{fontFamily : 'Arial', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		text = new PIXI.Text('Lives: ',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
 		text.x = 2;
 		text.y = 0;
 		
-		instructions = new PIXI.Text('Level 1 Cleared!',{fontFamily : 'Arial', fontSize: 50, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		instructions = new PIXI.Text('Level 1 Cleared!',{fontFamily : 'Century Gothic', fontSize: 50, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
 		instructions.x = 180;
 		instructions.y = 225;
 		
-		levelTag = new PIXI.Text('Level: 1',{fontFamily : 'Arial', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		levelTag = new PIXI.Text('Level: 1',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
 		levelTag.x = 710;
 		levelTag.y = 0;
 	
@@ -143,11 +189,11 @@ function setup(){
 		app.stage.addChildAt(background,0);
 	}
 	else if(stage == "level2"){
-		text = new PIXI.Text('Lives: ',{fontFamily : 'Arial', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		text = new PIXI.Text('Lives: ',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
 		text.x = 2;
 		text.y = 0;
 		
-		levelTag = new PIXI.Text('Level: 2',{fontFamily : 'Arial', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		levelTag = new PIXI.Text('Level: 2',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
 		levelTag.x = 710;
 		levelTag.y = 0;
 		
@@ -241,7 +287,7 @@ function setup(){
 		door.x = 50;
 		door.y = 60;
 		
-		instructions = new PIXI.Text('Level 2 Cleared!',{fontFamily : 'Arial', fontSize: 50, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		instructions = new PIXI.Text('Level 2 Cleared!',{fontFamily : 'Century Gothic', fontSize: 50, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
 		instructions.x = 180;
 		instructions.y = 225;
 		
@@ -262,15 +308,15 @@ function setup(){
 		app.stage.addChildAt(background,0);
 	}
 	else if(stage == "level3"){
-		text = new PIXI.Text('Lives: ',{fontFamily : 'Arial', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		text = new PIXI.Text('Lives: ',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
 		text.x = 2;
 		text.y = 0;
 		
-		instructions = new PIXI.Text('Level 3 Cleared!',{fontFamily : 'Arial', fontSize: 50, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		instructions = new PIXI.Text('Level 3 Cleared!',{fontFamily : 'Century Gothic', fontSize: 50, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
 		instructions.x = 180;
 		instructions.y = 350;
 		
-		levelTag = new PIXI.Text('Level: 3',{fontFamily : 'Arial', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+		levelTag = new PIXI.Text('Level: 3',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
 		levelTag.x = 710;
 		levelTag.y = 0;
 		
@@ -401,57 +447,72 @@ function setup(){
 		app.stage.addChildAt(background,0);
 	}
 	else if(stage == "death"){
-		text = new PIXI.Text('YOU DIED',{fontFamily : 'Arial', fontSize: 100, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		text = new PIXI.Text('YOU DIED',{fontFamily : 'Century Gothic', fontSize: 100, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
 		text.x = 150;
 		text.y = 100;
 
-		start = new PIXI.Text('Play Again? Hit Enter to restart',{fontFamily : 'Arial', fontSize: 25, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
-		start.x = 210;
-		start.y = 300;
+		start = new PIXI.Text('Play Again',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		start.x = 330;
+		start.y = 270;
 
-		back = new PIXI.Text('Or hit Escape to return to the main menu',{fontFamily : 'Arial', fontSize: 15, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
-		back.x = 230;
-		back.y = 350;
+		back = new PIXI.Text('Main Menu',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		back.x = 328;
+		back.y = 330;
+		
+		pointers = new PIXI.Sprite.fromImage('MenuPointers2.PNG');
+		pointers.x = 293;
+		pointers.y = 250;
 
 		app.stage.addChild(text);
 		app.stage.addChild(start);
 		app.stage.addChild(back);
+		app.stage.addChild(pointers);
 		lossAudio.play();
 	}
 	else if(stage == "end"){
-		text = new PIXI.Text('YOU WIN!',{fontFamily : 'Arial', fontSize: 80, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		text = new PIXI.Text('YOU WIN!',{fontFamily : 'Century Gothic', fontSize: 80, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
 		text.x = 195;
 		text.y = 100;
 
-		start = new PIXI.Text('Nice job! Want to Play Again? Hit Enter to restart',{fontFamily : 'Arial', fontSize: 25, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
-		start.x = 110;
-		start.y = 300;
+		start = new PIXI.Text('Play Again',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		start.x = 330;
+		start.y = 270;
 
-		back = new PIXI.Text('Or hit Escape to return to the main menu',{fontFamily : 'Arial', fontSize: 15, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
-		back.x = 230;
-		back.y = 350;
+		back = new PIXI.Text('Main Menu',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		back.x = 328;
+		back.y = 330;
+		
+		pointers = new PIXI.Sprite.fromImage('MenuPointers2.PNG');
+		pointers.x = 293;
+		pointers.y = 250;
 
 		app.stage.addChild(text);
 		app.stage.addChild(start);
 		app.stage.addChild(back);
+		app.stage.addChild(pointers);
 		winScreenAudio.play();
 	}
 	else if(stage == "inst"){
-		text = new PIXI.Text('Instructions',{fontFamily : 'Arial', fontSize: 70, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
+		text = new PIXI.Text('Instructions',{fontFamily : 'Century Gothic', fontSize: 70, fill : 0xFFFFFF, align : 'center', letterSpacing : 5});
 		text.x = 185;
-		text.y = 25;
+		text.y = 0;
 
-		start = new PIXI.Text('Controls:\nHold A to strafe left\nHold D to strafe right\nHold W to jump\nPress Space to flip the colors\n\nGoal:\nNavigate the levels while inverting the colors \nto display different paths.\n Reach the door at the end of each\nlevel to progress.',{fontFamily : 'Arial', fontSize: 25, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
-		start.x = 120;
-		start.y = 115;
+		start = new PIXI.Text('Controls:\nHold A to strafe left\nHold D to strafe right\nPress W to jump\nPress Space to flip the colors\nPress ESC to open the menu\n\nGoal:\nNavigate the levels while inverting the colors \nto display different paths.\n Reach the door at the end of each\nlevel to progress.',{fontFamily : 'Century Gothic', fontSize: 25, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		start.x = 100;
+		start.y = 90;
 
-		back = new PIXI.Text('Hit Escape to return to the main menu',{fontFamily : 'Arial', fontSize: 15, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
-		back.x = 250;
-		back.y = 450;
+		back = new PIXI.Text('Main Menu',{fontFamily : 'Century Gothic', fontSize: 20, fill : 0xFFFFFF, align : 'center', letterSpacing : 1});
+		back.x = 330;
+		back.y = 460;
+		
+		pointers = new PIXI.Sprite.fromImage('MenuPointers2.PNG');
+		pointers.x = 295;
+		pointers.y = 440;
 
 		app.stage.addChild(text);
 		app.stage.addChild(start);
 		app.stage.addChild(back);
+		app.stage.addChild(pointers);
 	}
 	//if the stage is a level, sets the movement function to run at regular intervals, this allows for smooth movement
 	if(stage == "level1" || stage == "level2" || stage == "level3"){
@@ -474,20 +535,167 @@ function makeRectangle(width=50,height=50,color=0xFF0000){
 document.addEventListener('keydown',function(e){
 	if(stage == "menu"){
 		if(e.keyCode == 13){
-			clear();
-			setup();
+			//clear();
+			//setup();
+			if(index == 0){
+				clear();
+				setup();
+			}
+			else if(index == 3){
+				clear("inst");
+				setup();
+			}
 		}
-		if(e.keyCode == 32){
-			clear("inst");
-			setup();
+		//if(e.keyCode == 32){
+		//	clear("inst");
+		//	setup();
+		//}
+		if(e.keyCode == 83 || e.keyCode == 87){
+			if(e.keyCode == 83){
+				index++;
+				if(index > 3){
+					index = 0;
+				}
+			}
+			if(e.keyCode == 87){
+				index--;
+				if(index < 0){
+					index = 3;
+				}
+			}
+			
+			
+			app.stage.removeChild(pointers);
+			
+			pointers = new PIXI.Sprite.fromImage('MenuPointers2.png');
+			pointers.x = menuItems[index].x;
+			pointers.y = menuItems[index].y;
+			
+			app.stage.addChild(pointers);
 		}
 	}
 	else if(stage == "level1" || stage == "level2" || stage == "level3"){
 		if(e.keyCode == 32){
 			flip();
 		}
+		if(e.keyCode == 27){
+			if(!menuState){
+				indexGame = 0;
+				gameMenu = new PIXI.Sprite.fromImage('gameMenu.png');
+				gameMenu.x = 300;
+				gameMenu.y = 50;
+			
+				app.stage.addChild(gameMenu);
+				menuState = true;
+				
+				pointers = new PIXI.Sprite.fromImage('MenuPointers3.png');
+				pointers.x = 300;
+				pointers.y = 140;
+			
+				app.stage.addChild(pointers);
+			}
+			else{
+				app.stage.removeChild(gameMenu);
+				app.stage.removeChild(pointers);
+				menuState = false;
+			}
+			
+		}
+		if(menuState){
+			if(e.keyCode == 83){
+				indexGame++;
+				if(indexGame > 4){
+					indexGame = 0;
+				}
+				app.stage.removeChild(pointers);
+				
+				pointers = new PIXI.Sprite.fromImage('MenuPointers3.png');
+				pointers.x = gameMenuItems[indexGame].x;
+				pointers.y = gameMenuItems[indexGame].y;
+			
+				app.stage.addChild(pointers);
+			}
+			if(e.keyCode == 87){
+				indexGame--;
+				if(indexGame < 0){
+					indexGame = 4;
+				}
+				app.stage.removeChild(pointers);
+				
+				pointers = new PIXI.Sprite.fromImage('MenuPointers3.png');
+				pointers.x = gameMenuItems[indexGame].x;
+				pointers.y = gameMenuItems[indexGame].y;
+			
+				app.stage.addChild(pointers);
+			}
+		}
+		if(e.keyCode == 13 && menuState){
+			switch(indexGame){
+				case 0:// Resume
+					menuState = false;
+					app.stage.removeChild(gameMenu);
+					app.stage.removeChild(pointers);
+					break;
+				case 1://Restart - Make a new function for this and Exit
+					//app.stage.removeChild(gameMenu);
+					//app.stage.removeChild(pointers);
+					//clear();
+					//setup();
+					break;
+				case 2://Options
+					break;
+				case 3://Controls
+					break;
+				case 4://Exit - Shits fucked
+					//app.stage.removeChild(gameMenu);
+					//app.stage.removeChild(pointers);
+					//clear("menu");
+					//setup();
+					break;
+				default:
+					break;
+			}
+		}
 	}
-	else if(stage == "death"){
+	else if(stage == "death" || stage == "end"){
+		if(e.keyCode == 13){
+			if(indexDeath == 0){
+				clear("level1");
+				setup();
+			}
+			else{
+				indexDeath = 0;
+				clear("menu");
+				setup();
+			}
+		}
+		if(e.keyCode == 83 || e.keyCode == 87){
+			if(indexDeath == 0){
+				indexDeath = 1;
+				app.stage.removeChild(pointers);
+			
+				pointers = new PIXI.Sprite.fromImage('MenuPointers2.png');
+				pointers.x = 293;
+				pointers.y = 310;
+			
+				app.stage.addChild(pointers);
+			}
+				
+			else if(indexDeath == 1){
+				indexDeath = 0;
+				app.stage.removeChild(pointers);
+			
+				pointers = new PIXI.Sprite.fromImage('MenuPointers2.png');
+				pointers.x = 293;
+				pointers.y = 250;
+			
+				app.stage.addChild(pointers);
+			}
+
+			
+		}
+	}
+	/*else if(stage == "end"){
 		if(e.keyCode == 13){
 			clear("level1");
 			setup();
@@ -496,24 +704,15 @@ document.addEventListener('keydown',function(e){
 			clear("menu");
 			setup();
 		}
-	}
-	else if(stage == "end"){
-		if(e.keyCode == 13){
-			clear("level1");
-			setup();
-		}
-		if(e.keyCode == 27){
-			clear("menu");
-			setup();
-		}
-	}
+	}*/
 	else if(stage == "inst"){
-		if(e.keyCode == 27){
+		if(e.keyCode == 13){
+			index = 0;
 			clear("menu");
 			setup();
 		}
 	}
-});
+	});
 
 //adds another event listener to the document to set a value of when a specific key, tied to movement, is down
 document.addEventListener('keydown',function(e) {	
@@ -545,6 +744,9 @@ document.addEventListener('keyup',function(e) {
 
 //movement function handles all the movement that happens, and calls the physics, gravity and collision methods to help
 function movement(){
+	if(!menuState){
+	
+	timer++;
 	if(stage == "level1"){
 		let col = boxesIntersect(player,base);
 		let col1 = boxesIntersect(player,plat1);
@@ -563,33 +765,50 @@ function movement(){
 		}
 	
 		if(stageColor == "white"){
-			if(col == false && col1 == false && col4 == false){
+			if(col == false && col1 == false && col4 == false && state != "nCJ15"){
 				state = "nCnJ";
 			}
 		}
 		else if(stageColor == "black"){
-			if(col2 == false && col3 == false){
+			if(col2 == false && col3 == false && state != "nCJ15"){
 				state = "nCnJ";
 			}
 		}
 	
 	
 		if(keys && keys[65]){
-			x -= 5;
+			x -= lateralSpeed;
 		}
 		if(keys && keys[68]){
-			x += 5;
+			x += lateralSpeed;
 		}
-		if(keys && keys[87] && ground){
-			if(jumpHeight == 15){
+		if(keys && keys[87] && ground && timer >= interval){
+			if(jumpHeight == originalJumpHeight){
 				jumpAudio.play();
 			}
-		
+			timer = 0;
 			state = "nCJ15";
+		}
+		//console.log(state);
+
+		if(state == "nCJ15"){
 			y -= jumpHeight;
 			jumpHeight--;
+			if(player.rotation < 360){
+				if(x < 0){
+					player.setTransform(player.x,player.y,1,1,player.rotation - 0.31416,0,0,0,0);
+				}
+				else{
+					player.setTransform(player.x,player.y,1,1,player.rotation + 0.31416,0,0,0,0);
+				}
+			}
+			else{
+				player.rotation = 0;
+			}
+			//console.log(player.rotation);
+
 			if(jumpHeight == 0){ 
-				jumpHeight = 0;
+				//jumpHeight = 0;
 				state = "nCJ0";
 			}
 		}
@@ -597,14 +816,19 @@ function movement(){
 			if(stageColor == "white"){
 				if(col || col1 || col4){
 					state = "CnJ";
+					fallSpeed = 1;
+					player.setTransform(player.x,player.y,1,1,0,0,0,0,0);
 				}	
 			}
 			else if(stageColor == "black"){
 				if(col2 || col3){
 					state = "CnJ";
+					player.setTransform(player.x,player.y,1,1,0,0,0,0,0);
 				}
 			}
 		}
+
+		
 	}
 	else if(stage == "level2"){
 		let col = boxesIntersect(player,base);
@@ -629,32 +853,46 @@ function movement(){
 		}
 		
 		if(stageColor == "white"){
-			if(col == false && col1 == false && col3 == false && col5 == false && col7 == false && col9 == false){
+			if(col == false && col1 == false && col3 == false && col5 == false && col7 == false && col9 == false && state != "nCJ15"){
 				state = "nCnJ";
 			}
 		}
 		else if(stageColor == "black"){
-			if(col2 == false && col4 == false && col6 == false && col8 == false){
+			if(col2 == false && col4 == false && col6 == false && col8 == false && state != "nCJ15"){
 				state = "nCnJ";
 			}
 		}
 	
 	
 		if(keys && keys[65]){
-			x -= 5;
+			x -= lateralSpeed;
 		}
 		if(keys && keys[68]){
-			x += 5;
+			x += lateralSpeed;
 		}
-		if(keys && keys[87] && ground){
-			if(jumpHeight == 15){
+		if(keys && keys[87] && ground && timer >= interval){
+			if(jumpHeight == originalJumpHeight){
 				jumpAudio.play();
 			}
+			timer = 0;
 			state = "nCJ15";
+		}
+		if(state == "nCJ15"){
 			y -= jumpHeight;
 			jumpHeight--;
+			if(player.rotation < 360){
+				if(x < 0){
+					player.setTransform(player.x,player.y,1,1,player.rotation - 0.31416,0,0,0,0);
+				}
+				else{
+					player.setTransform(player.x,player.y,1,1,player.rotation + 0.31416,0,0,0,0);
+				}
+			}
+			else{
+				player.rotation = 0;
+			}
 			if(jumpHeight == 0){ 
-				jumpHeight = 0;
+				//jumpHeight = 0;
 				state = "nCJ0";
 			}
 		}
@@ -662,11 +900,15 @@ function movement(){
 			if(stageColor == "white"){
 				if(col || col1 || col3 || col5 || col7 || col9){
 					state = "CnJ";
+					fallSpeed = 1;
+					player.setTransform(player.x,player.y,1,1,0,0,0,0,0);
 				}	
 			}
 			else if(stageColor == "black"){
 				if(col2 || col4 || col6 || col8){
 					state = "CnJ";
+					fallSpeed = 1;
+					player.setTransform(player.x,player.y,1,1,0,0,0,0,0);
 				}
 			}
 		}
@@ -697,12 +939,12 @@ function movement(){
 		}
 		
 		if(stageColor == "white"){
-			if(col == false && col4 == false && col8 == false && col12 == false){
+			if(col == false && col4 == false && col8 == false && col12 == false && state != "nCJ15"){
 				state = "nCnJ";
 			}
 		}
 		else if(stageColor == "black"){
-			if(col2 == false && col6 == false && col10 == false){
+			if(col2 == false && col6 == false && col10 == false && state != "nCJ15"){
 				state = "nCnJ";
 			}
 		}
@@ -724,30 +966,45 @@ function movement(){
 		}
 		if(keys && keys[65]){
 			if(col1 == false && col3 == false && col5 == false && col7 == false && col9 == false && col11 == false && stageColor == "white"){
-				x -= 5;
+				x -= lateralSpeed;
 			}
 			else if(stageColor == "black"){
-				x -= 5;
+				x -= lateralSpeed;
 			}
 		
 		}
 		if(keys && keys[68]){
 			if(col1 == false && col3 == false && col5 == false && col7 == false && col9 == false && col11 == false && stageColor == "white"){
-				x += 5;
+				x += lateralSpeed;
 			}
 			else if(stageColor == "black"){
-				x += 5;
+				x += lateralSpeed;
 			}
 		}
-		if(keys && keys[87] && ground){
-			if(jumpHeight == 15){
+		if(keys && keys[87] && ground && timer >= interval){
+			if(jumpHeight == originalJumpHeight){
 				jumpAudio.play();
 			}
+			timer = 0;
 			state = "nCJ15";
+		}
+		if(state == "nCJ15"){
 			y -= jumpHeight;
 			jumpHeight--;
+			if(player.rotation < 360){
+				if(x < 0){
+					player.setTransform(player.x,player.y,1,1,player.rotation - 0.31416,0,0,0,0);
+				}
+				else{
+					player.setTransform(player.x,player.y,1,1,player.rotation + 0.31416,0,0,0,0);
+				}
+				
+			}
+			else{
+				player.rotation = 0;
+			}
 			if(jumpHeight == 0){ 
-				jumpHeight = 0;
+				//jumpHeight = 0;
 				state = "nCJ0";
 			}
 		}
@@ -755,11 +1012,15 @@ function movement(){
 			if(stageColor == "white"){
 				if(col || col4 || col8 || col12){
 					state = "CnJ";
+					fallSpeed = 1;
+					player.setTransform(player.x,player.y,1,1,0,0,0,0,0);
 				}	
 			}
 			else if(stageColor == "black"){
 				if(col2 || col6 || col10){
 					state = "CnJ";
+					fallSpeed = 1;
+					player.setTransform(player.x,player.y,1,1,0,0,0,0,0);
 				}
 			}
 		}
@@ -782,13 +1043,14 @@ function movement(){
 	y = 0;
 	pX = player.x;
 	pY = player.y;
-}
+}}
 
 function physics(){
 	switch(state){
 		case "CnJ":
 			ground = true;
 			jumpHeight = originalJumpHeight;
+			fallSpeed = 1;
 			break;
 		case "nCnJ":
 			ground = false;
@@ -796,6 +1058,7 @@ function physics(){
 			break;
 		case "nCJ15":
 			ground = true;
+			timer = 0;
 			break;
 		case "nCJ0":
 			ground = false;
@@ -817,26 +1080,27 @@ function boxesIntersect(a, b)
 
 //Gravity method, as well as handling the player falling out of the level
 function gravity(){
-	player.y += 10;
+	if(fallSpeed > maxVel){
+		fallSpeed = maxVel;
+	}
+	else{
+		fallSpeed++;
+	}
+	player.y += fallSpeed;
 	if(player.y > 700){
 		if(stage == "level3"){
-			//player.x = 25;
-			//player.y = 80;
 			pX = 25;
 			pY = 80;
-			stageColor = "black";
-			flip();
-			loseHealth();
+			
 		}
 		else{
-			//player.x = 50;
-			//player.y = 400;
 			pX = 50;
 			pY = 400;
-			stageColor = "black";
-			flip();
-			loseHealth();
+			
 		}
+		stageColor = "black";
+		flip();
+		loseHealth();
 		
 	}
 }
@@ -862,7 +1126,7 @@ function loseHealth(){
 		clear();
 		setup();
 	}
-	localStorage.setItem("health",lives);
+	//localStorage.setItem("health",lives);
 }
 
 //flips the colors of the proper elements within each level
@@ -875,9 +1139,11 @@ function flip(){
 	}
 	if(stageColor == "white"){
 			app.stage.removeChild(player);
+			let rot = player.rotation;
 			player = makeRectangle(30,30,0x000000);
 			player.x = pX;
 			player.y = pY;
+			player.rotation = rot;
 			app.stage.addChild(player);
 	
 			app.stage.removeChild(background);
@@ -929,25 +1195,25 @@ function flip(){
 			}
 			
 			app.stage.removeChild(text);
-			text = new PIXI.Text('Lives: ',{fontFamily : 'Arial', fontSize: 24, fill : 0x000000, align : 'left'});
+			text = new PIXI.Text('Lives: ',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0x000000, align : 'left'});
 			text.x = 2;
 			text.y = 0;
 			
 			if(stage == "level1"){
 				app.stage.removeChild(levelTag);
-				levelTag = new PIXI.Text('Level: 1',{fontFamily : 'Arial', fontSize: 24, fill : 0x000000, align : 'left'});
+				levelTag = new PIXI.Text('Level: 1',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0x000000, align : 'left'});
 				levelTag.x = 710;
 				levelTag.y = 0;
 			}
 			else if(stage == "level2"){
 				app.stage.removeChild(levelTag);
-				levelTag = new PIXI.Text('Level: 2',{fontFamily : 'Arial', fontSize: 24, fill : 0x000000, align : 'left'});
+				levelTag = new PIXI.Text('Level: 2',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0x000000, align : 'left'});
 				levelTag.x = 710;
 				levelTag.y = 0;
 			}
 			else if(stage == "level3"){
 				app.stage.removeChild(levelTag);
-				levelTag = new PIXI.Text('Level: 3',{fontFamily : 'Arial', fontSize: 24, fill : 0x000000, align : 'left'});
+				levelTag = new PIXI.Text('Level: 3',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0x000000, align : 'left'});
 				levelTag.x = 710;
 				levelTag.y = 0;
 			}
@@ -961,9 +1227,11 @@ function flip(){
 		}
 		else if(stageColor == "black"){
 			app.stage.removeChild(player);
+			let rot = player.rotation;
 			player = makeRectangle(30,30,0xFFFFFF);
 			player.x = pX;
 			player.y = pY;
+			player.rotation = rot;
 			app.stage.addChild(player);
 		
 			app.stage.removeChild(background);
@@ -1015,25 +1283,25 @@ function flip(){
 			}
 			
 			app.stage.removeChild(text);
-			text = new PIXI.Text('Lives: ',{fontFamily : 'Arial', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+			text = new PIXI.Text('Lives: ',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
 			text.x = 2;
 			text.y = 0;
 
 			if(stage == "level1"){
 				app.stage.removeChild(levelTag);
-				levelTag = new PIXI.Text('Level: 1',{fontFamily : 'Arial', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+				levelTag = new PIXI.Text('Level: 1',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
 				levelTag.x = 710;
 				levelTag.y = 0;
 			}
 			else if(stage == "level2"){
 				app.stage.removeChild(levelTag);
-				levelTag = new PIXI.Text('Level: 2',{fontFamily : 'Arial', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+				levelTag = new PIXI.Text('Level: 2',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
 				levelTag.x = 710;
 				levelTag.y = 0;
 			}
 			else if(stage == "level3"){
 				app.stage.removeChild(levelTag);
-				levelTag = new PIXI.Text('Level: 3',{fontFamily : 'Arial', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
+				levelTag = new PIXI.Text('Level: 3',{fontFamily : 'Century Gothic', fontSize: 24, fill : 0xFFFFFF, align : 'left'});
 				levelTag.x = 710;
 				levelTag.y = 0;
 			}
@@ -1049,6 +1317,7 @@ function flip(){
 
 //clears out the current stage in preparation for the setting of the next one
 function clear(newStage){
+	
 	if(lives > 0){
 		if(stage == "level1"){
 			stage = "level2";
@@ -1185,6 +1454,7 @@ function clear(newStage){
 		app.stage.removeChild(start);
 		app.stage.removeChild(back);
 		app.stage.removeChild(start);
+		app.stage.removeChild(pointers);
 	}
 	else if(stage == "menu"){
 		if(newStage == "inst"){
@@ -1193,6 +1463,9 @@ function clear(newStage){
 			app.stage.removeChild(slogan);
 			app.stage.removeChild(instructions);
 			app.stage.removeChild(start);
+			app.stage.removeChild(startCont);
+			app.stage.removeChild(pointers);
+			app.stage.removeChild(options);
 		}
 		else{
 			stage = "level1";
@@ -1200,6 +1473,9 @@ function clear(newStage){
 			app.stage.removeChild(slogan);
 			app.stage.removeChild(instructions);
 			app.stage.removeChild(start);
+			app.stage.removeChild(startCont);
+			app.stage.removeChild(pointers);
+			app.stage.removeChild(options);
 		}
 	
 	}
@@ -1212,6 +1488,7 @@ function clear(newStage){
 			app.stage.removeChild(instructions);
 			app.stage.removeChild(start);
 			app.stage.removeChild(back);
+			app.stage.removeChild(pointers);
 		}
 		else if(newStage == "menu"){
 			stage = "menu";
@@ -1220,6 +1497,7 @@ function clear(newStage){
 			app.stage.removeChild(instructions);
 			app.stage.removeChild(start);
 			app.stage.removeChild(back);
+			app.stage.removeChild(pointers);
 		}
 	
 	}
@@ -1231,6 +1509,7 @@ function clear(newStage){
 			app.stage.removeChild(instructions);
 			app.stage.removeChild(start);
 			app.stage.removeChild(back);
+			app.stage.removeChild(pointers);
 		}
 		else if(newStage == "menu"){
 			stage = "menu";
@@ -1239,6 +1518,7 @@ function clear(newStage){
 			app.stage.removeChild(instructions);
 			app.stage.removeChild(start);
 			app.stage.removeChild(back);
+			app.stage.removeChild(pointers);
 		}
 	}
 	
