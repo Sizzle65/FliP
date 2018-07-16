@@ -12,7 +12,13 @@
 const app = new PIXI.Application(800,500);
 document.body.appendChild(app.view); 
 
+let restartHold = false;
+let restartState = false;
 let menuState = false;
+let restartGameButton = {name:"Restart Game",x:300,y:195};
+let restartLevelButton = {name:"Restart Level",x:300,y:263};
+let backButton = {name:"Back",x:300,y:387};
+let restartMenuItems = [restartGameButton,restartLevelButton,backButton];
 let newGameButton = {name:"New Game",x:282,y:260};
 let continueGameButton = {name:"Continue",x:282,y:310};
 let optionsButton = {name:"Options",x:282,y:360};
@@ -27,6 +33,7 @@ let gameMenuItems = [resumeButton,restartButton,optionsButtonGame,controlsButton
 let index = 0;
 let indexDeath = 0;
 let indexGame = 0;
+let indexRestart = 0;
 let maxVel = 20;
 let interval = 20;
 let timer = interval;
@@ -42,10 +49,10 @@ let x = 0;
 let y = 0;
 let keys = [];
 let state = "CnJ";
-let pX, pY, player, base, plat1, plat2, plat3, plat4, plat5, plat6,plat7,plat8,plat9,plat10,plat11,plat12, door,text,slogan,instructions,start,background,healthBox1,healthBox2,healthBox3,back,move,levelTag,startCont,options,pointers,gameMenu;
+let pX, pY, player, base, plat1, plat2, plat3, plat4, plat5, plat6,plat7,plat8,plat9,plat10,plat11,plat12, door,text,slogan,instructions,start,background,healthBox1,healthBox2,healthBox3,back,move,levelTag,startCont,options,pointers,gameMenu, restartMenu, pointers2;
 let stageColor = "white";
 let lives = 3;
-let stage = "level1";
+let stage = "menu";
 let audioMain = new Audio("mainMusic.mp3");
 audioMain.volume = 0.2;
 let jumpAudio = new Audio("jump.mp3");
@@ -123,8 +130,8 @@ function setup(){
 		background.y = 250;
 
 		player = makeRectangle(30,30,0xFFFFFF);
-		player.x = 100;
-		player.y = 470;
+		player.x = 50;
+		player.y = 400;
 
 		base = makeRectangle(400,15,0xFFFFFF);
 		base.x = 0;
@@ -550,14 +557,14 @@ document.addEventListener('keydown',function(e){
 		//	clear("inst");
 		//	setup();
 		//}
-		if(e.keyCode == 83 || e.keyCode == 87){
-			if(e.keyCode == 83){
+		if(e.keyCode == 83 || e.keyCode == 87 || e.keyCode == 38 || e.keyCode == 40){
+			if(e.keyCode == 83 || e.keyCode == 40){
 				index++;
 				if(index > 3){
 					index = 0;
 				}
 			}
-			if(e.keyCode == 87){
+			if(e.keyCode == 87 || e.keyCode == 38){
 				index--;
 				if(index < 0){
 					index = 3;
@@ -594,15 +601,20 @@ document.addEventListener('keydown',function(e){
 			
 				app.stage.addChild(pointers);
 			}
-			else{
+			else if(!restartState){
 				app.stage.removeChild(gameMenu);
 				app.stage.removeChild(pointers);
 				menuState = false;
 			}
+			else{
+				app.stage.removeChild(restartMenu);
+				app.stage.removeChild(pointers2);
+				restartState = false;
+			}
 			
 		}
-		if(menuState){
-			if(e.keyCode == 83){
+		if(menuState && !restartState){
+			if(e.keyCode == 83 || e.keyCode == 40){
 				indexGame++;
 				if(indexGame > 4){
 					indexGame = 0;
@@ -615,7 +627,7 @@ document.addEventListener('keydown',function(e){
 			
 				app.stage.addChild(pointers);
 			}
-			if(e.keyCode == 87){
+			if(e.keyCode == 87 || e.keyCode == 38){
 				indexGame--;
 				if(indexGame < 0){
 					indexGame = 4;
@@ -629,7 +641,8 @@ document.addEventListener('keydown',function(e){
 				app.stage.addChild(pointers);
 			}
 		}
-		if(e.keyCode == 13 && menuState){
+		
+		if(e.keyCode == 13 && menuState && !restartState){
 			switch(indexGame){
 				case 0:// Resume
 					menuState = false;
@@ -637,25 +650,93 @@ document.addEventListener('keydown',function(e){
 					app.stage.removeChild(pointers);
 					break;
 				case 1://Restart - Make a new function for this and Exit
-					//app.stage.removeChild(gameMenu);
-					//app.stage.removeChild(pointers);
-					//clear();
-					//setup();
+					restartMenu = new PIXI.Sprite.fromImage('gameMenuRestart.png');
+					restartMenu.x = 300;
+					restartMenu.y = 50;
+					app.stage.addChild(restartMenu);
+					restartState = true;
+					
+					pointers2 = new PIXI.Sprite.fromImage('MenuPointers3.png');
+					pointers2.x = 300;
+					pointers2.y = 195;//195 - 263 - 387
+			
+					app.stage.addChild(pointers2);
+					indexRestart = 0;
+					restartHold = true;
 					break;
 				case 2://Options
 					break;
 				case 3://Controls
 					break;
-				case 4://Exit - Shits fucked
-					//app.stage.removeChild(gameMenu);
-					//app.stage.removeChild(pointers);
-					//clear("menu");
-					//setup();
+				case 4://Exit
+					player.setTransform(player.x,player.y,1,1,0,0,0,0,0);
+					exit();
 					break;
 				default:
 					break;
 			}
 		}
+		if(restartState){
+			if(e.keyCode == 83 || e.keyCode == 40){
+				indexRestart++;
+				if(indexRestart > 2){
+					indexRestart = 0;
+				}
+				app.stage.removeChild(pointers2);
+				
+				pointers2 = new PIXI.Sprite.fromImage('MenuPointers3.png');
+				pointers2.x = restartMenuItems[indexRestart].x;
+				pointers2.y = restartMenuItems[indexRestart].y;
+			
+				app.stage.addChild(pointers2);
+			}
+			if(e.keyCode == 87 || e.keyCode == 38){
+				indexRestart--;
+				if(indexRestart < 0){
+					indexRestart = 2;
+				}
+				app.stage.removeChild(pointers2);
+				
+				pointers2 = new PIXI.Sprite.fromImage('MenuPointers3.png');
+				pointers2.x = restartMenuItems[indexRestart].x;
+				pointers2.y = restartMenuItems[indexRestart].y;
+			
+				app.stage.addChild(pointers2);
+			}
+		}
+		if(e.keyCode == 13 && restartState && !restartHold){
+			switch(indexRestart){
+				case 0://Game
+					app.stage.removeChild(gameMenu);
+					app.stage.removeChild(pointers);
+					app.stage.removeChild(pointers2);
+					app.stage.removeChild(restartMenu);
+					restartState = false;
+					menuState = false;
+					restart("game");
+					break;
+				case 1://Level
+					app.stage.removeChild(gameMenu);
+					app.stage.removeChild(pointers);
+					app.stage.removeChild(pointers2);
+					app.stage.removeChild(restartMenu);
+					restartState = false;
+					menuState = false;
+					restart("level");
+					break;
+				case 2://Back
+					restartState = false;
+					app.stage.removeChild(pointers2);
+					app.stage.removeChild(restartMenu);
+					break;
+				default:
+					break;
+			}
+		}
+		if(restartHold){
+			restartHold = false;
+		}
+		
 	}
 	else if(stage == "death" || stage == "end"){
 		if(e.keyCode == 13){
@@ -717,13 +798,28 @@ document.addEventListener('keydown',function(e){
 //adds another event listener to the document to set a value of when a specific key, tied to movement, is down
 document.addEventListener('keydown',function(e) {	
 	
+	//A
 	if(e.keyCode == 65){
 		keys[e.keyCode] = true;
 	}
+	//D
 	if(e.keyCode == 68){
 		keys[e.keyCode] = true;
 	}
+	//W
 	if(e.keyCode == 87){
+		keys[e.keyCode] = true;
+	}
+	//Left arrow
+	if(e.keyCode == 37){
+		keys[e.keyCode] = true;
+	}
+	//Up arrow
+	if(e.keyCode == 38){
+		keys[e.keyCode] = true;
+	}
+	//Right arrow
+	if(e.keyCode == 39){
 		keys[e.keyCode] = true;
 	}
 });
@@ -731,13 +827,28 @@ document.addEventListener('keydown',function(e) {
 //adds another event listener to the document to set a value of when a specific key, tied to movement, is released
 document.addEventListener('keyup',function(e) {	
 	
+	//A
 	if(e.keyCode == 65){
 		keys[e.keyCode] = false;
 	}
+	//D
 	if(e.keyCode == 68){
 		keys[e.keyCode] = false;
 	}
+	//W
 	if(e.keyCode == 87){
+		keys[e.keyCode] = false;
+	}
+	//Left arrow
+	if(e.keyCode == 37){
+		keys[e.keyCode] = false;
+	}
+	//Up arrow
+	if(e.keyCode == 38){
+		keys[e.keyCode] = false;
+	}
+	//Right arrow
+	if(e.keyCode == 39){
 		keys[e.keyCode] = false;
 	}
 });
@@ -776,13 +887,20 @@ function movement(){
 		}
 	
 	
-		if(keys && keys[65]){
+		if(keys && keys[65] || keys[37]){
 			x -= lateralSpeed;
 		}
-		if(keys && keys[68]){
+		if(keys && keys[68] || keys[39]){
 			x += lateralSpeed;
 		}
 		if(keys && keys[87] && ground && timer >= interval){
+			if(jumpHeight == originalJumpHeight){
+				jumpAudio.play();
+			}
+			timer = 0;
+			state = "nCJ15";
+		}
+		else if(keys && keys[38] && ground && timer >= interval){
 			if(jumpHeight == originalJumpHeight){
 				jumpAudio.play();
 			}
@@ -823,6 +941,7 @@ function movement(){
 			else if(stageColor == "black"){
 				if(col2 || col3){
 					state = "CnJ";
+					fallSpeed = 1;
 					player.setTransform(player.x,player.y,1,1,0,0,0,0,0);
 				}
 			}
@@ -871,6 +990,13 @@ function movement(){
 			x += lateralSpeed;
 		}
 		if(keys && keys[87] && ground && timer >= interval){
+			if(jumpHeight == originalJumpHeight){
+				jumpAudio.play();
+			}
+			timer = 0;
+			state = "nCJ15";
+		}
+		else if(keys && keys[38] && ground && timer >= interval){
 			if(jumpHeight == originalJumpHeight){
 				jumpAudio.play();
 			}
@@ -982,6 +1108,13 @@ function movement(){
 			}
 		}
 		if(keys && keys[87] && ground && timer >= interval){
+			if(jumpHeight == originalJumpHeight){
+				jumpAudio.play();
+			}
+			timer = 0;
+			state = "nCJ15";
+		}
+		else if(keys && keys[38] && ground && timer >= interval){
 			if(jumpHeight == originalJumpHeight){
 				jumpAudio.play();
 			}
@@ -1317,7 +1450,6 @@ function flip(){
 
 //clears out the current stage in preparation for the setting of the next one
 function clear(newStage){
-	
 	if(lives > 0){
 		if(stage == "level1"){
 			stage = "level2";
@@ -1522,6 +1654,148 @@ function clear(newStage){
 		}
 	}
 	
+}
+
+function exit(){
+	if(stage == "level1"){
+		app.stage.removeChild(healthBox1);
+		app.stage.removeChild(healthBox2);
+		app.stage.removeChild(healthBox3);
+		app.stage.removeChild(text);
+		app.stage.removeChild(base);
+		app.stage.removeChild(plat1);
+		app.stage.removeChild(door);
+		app.stage.removeChild(plat2);
+		app.stage.removeChild(plat3);
+		app.stage.removeChild(plat4);
+		app.stage.removeChild(player);
+		app.stage.removeChild(background);
+		app.stage.removeChild(levelTag);
+	}
+	else if(stage == "level2"){
+		app.stage.removeChild(healthBox1);
+		app.stage.removeChild(healthBox1);
+		app.stage.removeChild(healthBox2);
+		app.stage.removeChild(healthBox3);
+		app.stage.removeChild(text);
+		app.stage.removeChild(base);
+		app.stage.removeChild(plat1);
+		app.stage.removeChild(door);
+		app.stage.removeChild(plat2);
+		app.stage.removeChild(plat3);
+		app.stage.removeChild(plat4);
+		app.stage.removeChild(plat5);
+		app.stage.removeChild(plat6);
+		app.stage.removeChild(plat7);
+		app.stage.removeChild(plat8);
+		app.stage.removeChild(plat9);
+		app.stage.removeChild(background);
+		app.stage.removeChild(instructions);
+		app.stage.removeChild(levelTag);
+		app.stage.removeChild(player);	
+	}
+	else if(stage == "level3"){
+		app.stage.removeChild(base);
+		app.stage.removeChild(player);
+		app.stage.removeChild(background);
+		app.stage.removeChild(levelTag);
+		app.stage.removeChild(healthBox1);
+		app.stage.removeChild(healthBox1);
+		app.stage.removeChild(healthBox2);
+		app.stage.removeChild(healthBox3);
+		app.stage.removeChild(text);
+		app.stage.removeChild(plat1);
+		app.stage.removeChild(plat2);
+		app.stage.removeChild(plat3);
+		app.stage.removeChild(plat4);
+		app.stage.removeChild(plat5);
+		app.stage.removeChild(plat6);
+		app.stage.removeChild(plat7);
+		app.stage.removeChild(plat8);
+		app.stage.removeChild(plat9);
+		app.stage.removeChild(plat10);
+		app.stage.removeChild(plat11);
+		app.stage.removeChild(plat12);
+		app.stage.removeChild(door);
+	}
+	app.stage.removeChild(gameMenu);
+	app.stage.removeChild(pointers);
+	app.stage.removeChild(door);
+	clearInterval(move);
+	stage = "menu";
+	setup();
+}
+
+function restart(resType){
+	if(stage == "level1"){
+		app.stage.removeChild(healthBox1);
+		app.stage.removeChild(healthBox2);
+		app.stage.removeChild(healthBox3);
+		app.stage.removeChild(text);
+		app.stage.removeChild(base);
+		app.stage.removeChild(plat1);
+		app.stage.removeChild(door);
+		app.stage.removeChild(plat2);
+		app.stage.removeChild(plat3);
+		app.stage.removeChild(plat4);
+		app.stage.removeChild(player);
+		app.stage.removeChild(background);
+		app.stage.removeChild(levelTag);
+	}
+	else if(stage == "level2"){
+		app.stage.removeChild(healthBox1);
+		app.stage.removeChild(healthBox1);
+		app.stage.removeChild(healthBox2);
+		app.stage.removeChild(healthBox3);
+		app.stage.removeChild(text);
+		app.stage.removeChild(base);
+		app.stage.removeChild(plat1);
+		app.stage.removeChild(door);
+		app.stage.removeChild(plat2);
+		app.stage.removeChild(plat3);
+		app.stage.removeChild(plat4);
+		app.stage.removeChild(plat5);
+		app.stage.removeChild(plat6);
+		app.stage.removeChild(plat7);
+		app.stage.removeChild(plat8);
+		app.stage.removeChild(plat9);
+		app.stage.removeChild(background);
+		app.stage.removeChild(instructions);
+		app.stage.removeChild(levelTag);
+		app.stage.removeChild(player);	
+	}
+	else if(stage == "level3"){
+		app.stage.removeChild(base);
+		app.stage.removeChild(player);
+		app.stage.removeChild(background);
+		app.stage.removeChild(levelTag);
+		app.stage.removeChild(healthBox1);
+		app.stage.removeChild(healthBox1);
+		app.stage.removeChild(healthBox2);
+		app.stage.removeChild(healthBox3);
+		app.stage.removeChild(text);
+		app.stage.removeChild(plat1);
+		app.stage.removeChild(plat2);
+		app.stage.removeChild(plat3);
+		app.stage.removeChild(plat4);
+		app.stage.removeChild(plat5);
+		app.stage.removeChild(plat6);
+		app.stage.removeChild(plat7);
+		app.stage.removeChild(plat8);
+		app.stage.removeChild(plat9);
+		app.stage.removeChild(plat10);
+		app.stage.removeChild(plat11);
+		app.stage.removeChild(plat12);
+		app.stage.removeChild(door);
+	}
+	
+	if(resType == "game"){
+		stage = "level1";
+		
+	}
+	
+	clearInterval(move);
+	setup();
 }
 
 window.onload = load();
